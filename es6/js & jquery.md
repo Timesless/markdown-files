@@ -33,7 +33,7 @@ Object.values(p);
 Object.assign({a:1}, {b:2});  // {a:1, b:2}
 ```
 
-### _Map & Set
+### Map & Set
 
 ``` js
 var map = new Map();
