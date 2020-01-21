@@ -5,7 +5,7 @@
 ``` js
 // 匿名函数
 (function() {})
-// 匿名函数复制给变量，相当于function f() {}
+// 匿名函数赋值给变量，相当于function f() {}
 var f = (function() {});
 // 匿名函数，可“自执行”
 (function() { console.info(1) })();
@@ -38,8 +38,7 @@ Object.assign({a:1}, {b:2});  // {a:1, b:2}
 ``` js
 var map = new Map();
 var m = new Map([['a', 1], [2, 'b']]);
-map.set('a', 1);
-map.set(2, 'b');
+map.set('a', 1); map.set(2, 'b');
 map.has(2);
 map.get(2);
 map.delete(2);
@@ -47,12 +46,11 @@ console.log(map.keys() + map.values() + map.entries());
 
 var set = new Set();
 var s = new Set([1, 2, 3, 3]);
-set.add(1);
-set.add('2');
+set.add(1); set.add('2');
 set.delete(1);
 console.info(set.size);
 // 遍历
-map | set .forEach(function(v, k, s) {
+map | set.forEach(function(v, k, s) {
     // s 自身对象
 });
 ```
@@ -66,8 +64,6 @@ function f() {
     function f2() { console.info(a); }
 }
 ```
-
-
 
 ### Prototype
 
@@ -93,7 +89,7 @@ var arr = [1, 2, 3];
 2. arr.forEach(function(e, idx, ary) {
     console.info(e);
     // ary 代表数组本身
-})
+});
 ```
 
 + 对象
@@ -167,7 +163,6 @@ $('div').parent();
 $('ul li').each(function(idx, e) {
     console.info(idx + e);
 });
-
 // 操作元素
 $('#div').html();	// 无参是获取内容，带参是修改内容
 // 属性

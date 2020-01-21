@@ -2,22 +2,22 @@
 
 ## java.util.concurrent
 
-+ **java.util.concurrent.aotomic**
-+ **java.util.concurrent.locks**
++ java.util.concurrent.atomic
++ java.util.concurrent.locks
 
 ---
 
 ***____高内聚低耦合前提下***
 
 + **线程 操作  资源类  = 实例变量 + 实例方法**
-+ **判断volatile标识位（always be uesd in a loop） 执行 通知**
++ **判断（volatile标识 always be uesd in a loop） 执行 通知**
 + **防止虚假唤醒**
 
 ****
 
 ### 内置锁 & Lock
 
-> **___Synchronized**
+> **Synchronized**
 >
 > ``` java
 > // 资源类，高内聚提供sale()
@@ -31,29 +31,27 @@
 > }
 > // 全局锁,Test.class字节码对应在JRE运行时中的Class<Test>
 > 3. synchronized static void test() { }
-> 
 > ```
->
-> **___Interface Lock**
->
-> + <kbd>ReentrantLock</kbd>
+> 
+>**Interface Lock**
+> 
+>+ <kbd>ReentrantLock</kbd>
 > + <kbd>ReentrantReadWriteLock.ReadLock</kbd>
 > + <kbd>ReentrantReadWriteLock.WriteLock</kbd>
->
-> ### 线程状态  Thread.State
->
-> + NEW
+> 
+>### 线程状态  Thread.State
+> 
+>+ NEW
 > + RUNNABLE
 > + BLOCKED
 > + WAITING
 > + TIMED_WAITING
 > + TERMINATED
->
->  
+> 
 
 ---
 
-###  ___函数式编程
+###  函数式编程
 
 ``` java
 int age = 23;	// 值是静态的不变化
@@ -68,7 +66,7 @@ interface test {
 }
 ```
 
-### ____四大函数式接口
+### 四大函数式接口
 
 + **Consumer**
     + void accept(T t)
@@ -101,7 +99,7 @@ predicate.test("123");
 
 +++
 
-## __Synchronized & Lock
+## Synchronized & Lock
 
 | synchronized块内 | Condition c = lock.newCondition() |
 | :--------------: | :-------------------------------: |
@@ -109,7 +107,7 @@ predicate.test("123");
 |     notify()     |             signal()              |
 |   notifyAll()    |            signalAll()            |
 
-### ___Interface Callable
+### Interface Callable
 
 > new Thread(Runnable target, String name)
 >
@@ -126,15 +124,13 @@ predicate.test("123");
 > + 对于同一对象的同一方法提交给Callable，只会执行一次
 > + get()；阻塞，请放在方法最后
 
-## ___Interface BlockingQueue
+## Interface BlockingQueue
 
 | 方法 |   异常    |  特殊值  |     阻塞      |         超时阻塞         |
 | :--: | :-------: | :------: | :-----------: | :----------------------: |
 | 插入 |  add(E)   | offer(E) | <b>put(E)</b> | offer(E, long, TimeUnit) |
 | 删除 | remove()  |  poll()  | <b>take()</b> |   poll(long, TimeUnit)   |
 | 查看 | element() |  peek()  |     null      |           null           |
-
-
 
 所有阻塞API都调用**xfer(E, boolean, int, long)**
 
@@ -223,14 +219,14 @@ private E xfer(E e, boolean haveData, int how, long nanos) {
 
 ---
 
-## __Interface Executor
+## Interface Executor
 
 + Interface ExecutorService
     + AbstractExecutorService
         + **ThreadPoolExecutor**
     + Interface ScheduledExecutorService
 
-### __ThreadPoolExecutor
+### ThreadPoolExecutor
 
 ``` java
 public ThreadPoolExecutor(int corePoolSize,
@@ -252,7 +248,7 @@ public ThreadPoolExecutor(int corePoolSize,
 + 丢弃 -> **discardPolicy**
 + 丢弃等待最长的任务 -> **discardOldestPolicy**
 
-### _Executors
+### Executors
 
 ``` java
 // 比较恐怖，任务队列为无界
@@ -263,13 +259,15 @@ static ExexutorService newFixedThreadPool(int nThreads) {
 }
 ```
 
-## __分支合并框架
+
+
+## 分支合并框架
 
 + **ForkJoinPool**
 + **ForkJoinTask**
 + **RecursiveTask extends ForkJoinTask**
 
-### __CompletableFuture 异步回调
+### CompletableFuture 异步回调
 
 ``` java
 // 无返回值异步
@@ -331,9 +329,9 @@ JVM --> OS --> C[硬件 SPAC]
 
 + **方法区**
 
-> 类结构信息
+> 类结构信息等
 
-+ **____栈**
++ **栈**
 
 每个方法执行会创建栈帧，存储**局部变量表，操作数栈，动态链接，方法出口等**
 
@@ -368,15 +366,13 @@ JVM --> OS --> C[硬件 SPAC]
 
 [Times: user=0.08 sys = 0.02, real=0.00 secs]
 
-### ___垃圾回收算法
+### 垃圾回收算法
 
 + 复制
 + 标记清除
 + 标记清除压缩
 
 **内存连续可采用指针碰撞**
-
-
 
 # JMM
 
@@ -389,8 +385,6 @@ JVM --> OS --> C[硬件 SPAC]
 ``` java
 // 资源类
 class Resource {
-    
-    
     int num = 10;
     void changeNum() { this.num = 20; }
     // A线程在2秒之后修改num，但主线程是不知道的，需要添加volatile关键字

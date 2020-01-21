@@ -1,4 +1,4 @@
-### 1.1.1 数值存储要求
+ ### 数值类型存储要求
 
 | Data Type                    | Storage Required            |
 | ---------------------------- | --------------------------- |
@@ -10,7 +10,7 @@
 | decimal(M, D), numeric(M, D) | <= 4 + 4 B                  |
 | bit(M)                       | approximately (M + 7) / 8 B |
 
-### 1.1.2 字符串存储要求
+### 字符串类型存储要求
 
 M: declared column length
 

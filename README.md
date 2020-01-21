@@ -1,2 +1,2 @@
 # Typeora
-some markdown filess
+some markdown files
