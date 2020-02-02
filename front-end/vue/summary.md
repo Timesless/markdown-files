@@ -215,7 +215,7 @@ new Vue({
 // render 以.vue开发，template由vue-template-complier转换为render
 import App from 'app'
 new Vue({
-    el: '#app',
+    // el: '#app',
     // 传入标签 | 组件对象
     render: h => h(App)
 }).$mount('#app');
@@ -225,14 +225,18 @@ new Vue({
 
 + CLI2
 + CLI3
+
+> @vue/cli-service 许多开发时依赖由该脚手架统一管理
+>
+> vue-template-compiler
+
 + ESLint
-+ 路由
-+ 后端渲染，前后端分离，前端路由
-+ url的hash和html5的history模式
 
 ### vue-router
 
-
++ 路由
++ 后端渲染，前后端分离，前端路由
++ url的hash和html5的history模式
 
 + 路由映射配置
 + router-link
