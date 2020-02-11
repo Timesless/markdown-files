@@ -46,7 +46,7 @@ git log --oneline
 
 git reflog
 
-![image-20200121115629960](F:\Program Files\Typora\workspace\image-20200121115629960.png)
+![image-20200121115629960](image-20200121115629960.png)
 
 #### 3.2 基于索引操作版本号
 
@@ -85,7 +85,7 @@ git branch hot_fix
 + git checkout master(**将其它分支合并到master**)
 + git merge [**有新内容的分支**]
 
-![image-20200121130458579](F:\Program Files\Typora\workspace\image-20200121130458579.png)
+![image-20200121130458579](image-20200121130458579.png)
 
 解决冲突：
 
@@ -127,7 +127,7 @@ merge冲突解决同分支合并冲突解决
 + **集中式工作流** 同SVN，所有提交到master分支
 + **GitFlow工作流** 多分支
 
-![image-20200121141353905](F:\Program Files\Typora\workspace\image-20200121141353905.png)
+![image-20200121141353905](image-20200121141353905.png)
 
 + **Forking工作流** 跨团队协作
 
