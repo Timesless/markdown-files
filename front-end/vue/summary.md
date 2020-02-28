@@ -194,7 +194,7 @@ render --> virtual-dom --> ui
 >
 > runtime-only 会使用render中的函数调用替换掉el中的内容
 >
-> **template由vue-template-complier转换为render，且是开始时依赖，所以不存在template了**
+> **template由vue-template-complier转换为render，且是开发时依赖，所以不存在template了**
 
 #### runtime + complier
 
@@ -226,7 +226,7 @@ new Vue({
 + CLI2
 + CLI3
 
-> @vue/cli-service 许多开发时依赖由该脚手架统一管理
+> @vue/cli-service 很多开发时依赖由该脚手架统一管理
 >
 > vue-template-compiler
 
