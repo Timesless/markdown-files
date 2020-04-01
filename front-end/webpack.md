@@ -118,6 +118,10 @@ module.exports = {
 + 打包优化
 + 动态module引入
 
+> 每个动态引入的组件会被单独打包为一个出口文件
+>
+> optimization会将node_modules引入的所有组件单独打包为一个出口文件
+
 ```js
 // 1 将node_modules中打包为单独文件
 optimization: {
@@ -127,7 +131,31 @@ optimization: {
 }
 
 // 2 动态引入module
-import()
+import _ form 'lodash';
+// 返回一个Promise对象
+function getComponent() {
+    return import(/* webpackChunkName: "lodash" */ 'lodash').then(
+    	({default: _}) => {
+            const ele = document.createElment('div');
+            ele.innerHTML = _.join(['hello', 'webpack'], 'split');
+            return ele;
+    }).catch(err => 'An error occurred while async loadding a component');
+}
+// 1 调用
+getComponent().then(component => document.body.appendChild(component));
+// 2 
+Vue.component('async-webpack-example', function(resolve) {
+    require(['./my-async-component'], resolve);
+})
+// 3 也可以这样做
+Vue.component('async-webpack-example',
+              () => import('./my-async-component'));
+// 4 局部注册时，可直接提供一个返回Promise的函数
+new Vue({
+    components: {
+        'async-component': () => import('./my-async-component')
+    }
+})
 ```
 
 #### externals

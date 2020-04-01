@@ -1,4 +1,4 @@
-## 谋定而后动，三思而后行
+> 谋定而后动，三思而后行
 
 + API发送和接收
 + 高可用与容错
@@ -32,8 +32,6 @@ C[Session] --> |2| MessageConsumer
 ```
 
 **工厂创建连接，连接创建会话**
-
----
 
 <kbd>DESTINATION <kbd>队列</kbd><kbd>主题</kbd></kbd>
 

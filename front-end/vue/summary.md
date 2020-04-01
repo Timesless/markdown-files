@@ -221,14 +221,18 @@ new Vue({
 }).$mount('#app');
 ```
 
-
-
 + CLI2
 + CLI3
 
 > @vue/cli-service 很多开发时依赖由该脚手架统一管理
 >
-> vue-template-compiler
+> runtime-only => vue-template-compiler将template渲染为render函数
+
+``` js
+// cl3修改配置
+1. vue ui
+2. vue.config.js vue会将此配置合并
+```
 
 + ESLint
 
@@ -248,6 +252,25 @@ new Vue({
 + 全局导航守卫 navigation guard
 + keep-alive
 + tabbar
+
+``` js
+// 后端渲染
+jsp，请求的页面是服务器已经渲染的
+// 前后端分离
+（ajax请求）后端只负责提供数据， html+css+js在静态服务器（nginx）获取
+// SPA 前端路由（管理url与页面的映射关系）
+只有一个html页面，路由控制显示与跳转
+```
+
+#### history模式
+
+``` js
+// h5的history模式
+history.go(1) == history.forward();
+history.go(-1) == history.back();
+history.pushState({}, 'title', 'url');
+history.replaceState({}, 'title', 'url');
+```
 
 
 

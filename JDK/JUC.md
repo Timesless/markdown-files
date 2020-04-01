@@ -1,105 +1,33 @@
-# JUC
-
-## java.util.concurrent
+#### java.util.concurrent
 
 + java.util.concurrent.atomic
 + java.util.concurrent.locks
 
----
-
-***____高内聚低耦合前提下***
-
-+ **线程 操作  资源类  = 实例变量 + 实例方法**
-+ **判断（volatile标识 always be uesd in a loop） 执行 通知**
-+ **防止虚假唤醒**
-
-****
-
-### 内置锁 & Lock
-
-> **Synchronized**
+> 高内聚下线程操作资源类（实例变量 + 实例方法）
 >
-> ``` java
-> // 资源类，高内聚提供sale()
-> private int number = 30;
-> private Object obj = new Object();
-> // 对象锁，this的所有同步方法
-> 1.1 private synchronized void sale() { }
-> // 对象锁，obj的所有同步方法
-> 1.2 private void sale() {
->     synchronized(obj) { }
-> }
-> // 全局锁,Test.class字节码对应在JRE运行时中的Class<Test>
-> 3. synchronized static void test() { }
-> ```
-> 
->**Interface Lock**
-> 
->+ <kbd>ReentrantLock</kbd>
-> + <kbd>ReentrantReadWriteLock.ReadLock</kbd>
-> + <kbd>ReentrantReadWriteLock.WriteLock</kbd>
-> 
->### 线程状态  Thread.State
-> 
->+ NEW
-> + RUNNABLE
-> + BLOCKED
-> + WAITING
-> + TIMED_WAITING
-> + TERMINATED
-> 
+> 判断（是否该自己执行）执行（执行逻辑）通知（执行完毕唤醒其它线程）
+>
+> 防止虚假唤醒（always be uesd in a loop）
 
----
 
-###  函数式编程
+
+#### Synchronized
 
 ``` java
-int age = 23;	// 值是静态的不变化
-f(x) = kx + 1;	// 值随着参数而变化
-
-// JAVA8 函数式接口
-@FunctionalInterface
-interface test {
-    void sayHello();
-    default int add(int x, int y) { return x+y; }
-    static int mul(int x, int y) { return x*y; }
+// 资源类，高内聚提供sale()
+private int number = 30;
+private Object obj = new Object();
+// 对象锁，this的所有同步方法
+1.1 private synchronized void sale() { }
+// 对象锁，obj的所有同步方法
+1.2 private void sale() {
+ synchronized(obj) { }
 }
+// 全局锁,Test.class字节码对应在JRE运行时中的Class<Test>
+3. synchronized static void test() { }
 ```
 
-### 四大函数式接口
-
-+ **Consumer**
-    + void accept(T t)
-    + default Consumer addThen(Consumer)
-+ **Function**
-    + R apply(T t);
-    + default Function addThen(Function);
-    + static Function identity();  **always return its input argument**
-
-``` java
-Stream<String> stream = Stream.of("i", "love", "this");
-stream.collect(Collectors.toMap(Function.identity(), String::length));
-```
-
-+ **Predicate**
-    + boolean test(T t);
-    + default Predicate and(Predicate);
-    + default Predicate or(Predicate);
-    + default Predicate negate();
-    + static Predicate isEqual(Object target);
-
-``` java
-String str = "123";
-Predicate<String> predicate = Predicate.isEqual(str);
-predicate.test("123");
-```
-
-+ **Supplier**
-    + T get();
-
-+++
-
-## Synchronized & Lock
+#### Synchronized & Lock
 
 | synchronized块内 | Condition c = lock.newCondition() |
 | :--------------: | :-------------------------------: |
@@ -107,7 +35,9 @@ predicate.test("123");
 |     notify()     |             signal()              |
 |   notifyAll()    |            signalAll()            |
 
-### Interface Callable
+
+
+#### Interface Callable
 
 > new Thread(Runnable target, String name)
 >
@@ -124,7 +54,9 @@ predicate.test("123");
 > + 对于同一对象的同一方法提交给Callable，只会执行一次
 > + get()；阻塞，请放在方法最后
 
-## Interface BlockingQueue
+
+
+#### Interface BlockingQueue
 
 | 方法 |   异常    |  特殊值  |     阻塞      |         超时阻塞         |
 | :--: | :-------: | :------: | :-----------: | :----------------------: |
@@ -202,24 +134,24 @@ private E xfer(E e, boolean haveData, int how, long nanos) {
 }
 ```
 
-实现类：
+> 阻塞队列实现类：
+>
+> + ArrayBlockingQueue -> 数组实现的有界阻塞队列
+> + LinkedBlockingQueue  -> 链表实现的有界（**默认为Integer.MAX_VALUE**）阻塞队列
+> + PriorityBlockingQueue -> 支持优先级排序的无界阻塞队列
+> + DelayQueue -> 支持延时获取元素的无界阻塞队列，内部以PriorityQueue实现
+> + SynchronousQueue -> 单个元素的有界阻塞队列
+> + LinkedTranferQueue -> 是LinkedBlockingQueue & SynchronousQueue的组合
+>
+> put()线程，首先查看head是否是take()，如果是直接交出数据，否则追加到队列，立刻返回
+>
+> take()线程，首先查看head是否是put()，如果是直接拿走数据，如果不是追加到tail，并阻塞
+>
+> + LinkedBlockingDeque -> 链表实现的双端阻塞队列
 
-+ ArrayBlockingQueue -> 数组实现的有界阻塞队列
-+ LinkedBlockingQueue  -> 链表实现的有界（**默认为Integer.MAX_VALUE**）阻塞队列
-+ PriorityBlockingQueue -> 支持优先级排序的无界阻塞队列
-+ DelayQueue -> 支持延时获取元素的无界阻塞队列，内部以PriorityQueue实现
-+ SynchronousQueue -> 单个元素的有界阻塞队列
-+ LinkedTranferQueue -> 是LinkedBlockingQueue & SynchronousQueue的组合
 
-**put()线程，首先查看head是否是take()，如果是直接交出数据，否则追加到队列，立刻返回**
 
-**take()线程，首先查看head是否是put()，如果是直接拿走数据，如果不是追加到tail，并阻塞**
-
-+ LinkedBlockingDeque -> 链表实现的双端阻塞队列
-
----
-
-## Interface Executor
+#### Interface Executor
 
 + Interface ExecutorService
     + AbstractExecutorService
@@ -241,14 +173,14 @@ public ThreadPoolExecutor(int corePoolSize,
                           RejectedExecutionHandler handler);
 ```
 
-### 4大拒绝策略（maximum + workQueue.size()）
+#### 4大拒绝策略（maximum + workQueue.size()）
 
 + 默认抛出RejectedExecutionException -> new ThreadExecutor.AbortPolicy();
 + 将某些任务回退给调用者（main） -> **CallerRunsPolicy**
 + 丢弃 -> **discardPolicy**
 + 丢弃等待最长的任务 -> **discardOldestPolicy**
 
-### Executors
+#### Executors
 
 ``` java
 // 比较恐怖，任务队列为无界
@@ -261,13 +193,15 @@ static ExexutorService newFixedThreadPool(int nThreads) {
 
 
 
-## 分支合并框架
+#### 分支合并框架
 
 + **ForkJoinPool**
 + **ForkJoinTask**
 + **RecursiveTask extends ForkJoinTask**
 
-### CompletableFuture 异步回调
+
+
+#### CompletableFuture 异步回调
 
 ``` java
 // 无返回值异步
@@ -285,102 +219,13 @@ CompletableFutre<Integer> future = CompletableFuture.supplyAsync(
 future.get();
 ```
 
-# JVM
 
-``` mermaid
-graph LR
-JVM --> OS --> C[硬件 SPAC]
-```
 
-<kbd>Class files</kbd> --> <kbd>Class Loader</kbd> --> <kbd>Runtime Data Area </kbd> --> <kbd>Execution Engine & Native Interface</kbd>
+#### JMM
 
-+ 运行时数据区 Runtime Data Area
+> JMM需要保证可见性，原子性，有序性
 
-> <kbd>方法区</kbd>
->
-> <kbd>堆</kbd>
->
-> <kbd>虚拟机栈 & 本地方法栈</kbd>
->
-> <kbd>程序计数器</kbd>
-
-+ 类加载器 ClassLoader
-    + 双亲委派
-
-> <kbd>将class字节码文件加载并转换为方法区运行时数据结构</kbd>
->
-> 即： **Test.class被加载并初始化之后在方法区为 Class<Test>**
->
-> ``` mermaid
-> graph LR
-> A[Bootstrap 根加载器] --> B[Extension 扩展加载器] --> AppClassLoader
-> 
-> ```
->
-> Bootstrap加载**${JAVA_HOME}/jre/lib/rt.jar**
->
-> Extension加载扩展的补丁，**${JAVA_HOME}/jre/lib/ext/*.jar**
->
-> AppClassLoader加载用户自定义类
->
-> **Test.class.getClassLoader()**
-
-+ 本地方法接口<kbd>Native Interface</kbd>
-
-+ **方法区**
-
-> 类结构信息等
-
-+ **栈**
-
-每个方法执行会创建栈帧，存储**局部变量表，操作数栈，动态链接，方法出口**等
-
-**如果不写final，那么有可能修改引用为null，那么原引用的对象可能被GC**
-
-栈帧：
-
-| 局部变量表（:输入输出参数，方法内定义的变量。在执行前能确定大小） |
-| :----------------------------------------------------------: |
-|                **操作数栈**（在这里处理运算）                |
-|                           动态链接                           |
-|    方法出口（由字节码执行器修改的pc寄存器的代码行指示器）    |
-|                           **父帧**                           |
-|                           **子帧**                           |
-
-+ 堆
-    + 新生代	**Eden, From Survivor, To Survivor**
-    + 老年代
-    + **元空间，逻辑上在堆连续，物理上实现为堆外内存**
-
-| 名称                    | 名称          |
-| ----------------------- | ------------- |
-| Young generation Space  | New \| Young  |
-| Tenure generation Space | Old \| Tenure |
-
-+ Young GC | Minor GC
-+ Full GC | Major GC
-
-<kbd>堆<kbd>Young 3/8<kbd>Eden</kbd><kbd>S0</kbd><kbd>S1</kbd></kbd><kbd>Old 5/8</kbd></kbd>
-
-[PSYoungGen: 2048k->488k(2560k)] 2048k -> 773k(9728k), 0.0015secs]
-
-[Times: user=0.08 sys = 0.02, real=0.00 secs]
-
-### 垃圾回收算法
-
-+ 复制
-+ 标记清除
-+ 标记清除压缩
-
-**内存连续可采用指针碰撞**
-
-# JMM
-
-+ 可见性
-+ 原子性
-+  有序性
-
-**内存模型规定所有实例变量存储在，主内存（堆），线程需将变量从主内存复制到工作内存，执行操作后复制回主内存，线程的通信需通过主内存**
+**Java内存模型规定所有实例变量存储在，主内存（堆），线程需将变量从主内存复制到工作内存，执行操作后复制回主内存，线程的通信需通过主内存**
 
 ``` java
 // 资源类

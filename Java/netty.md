@@ -1,7 +1,7 @@
-> 线程模型
+> I/O线程模型
 >
 > - 传统阻塞IO模型
-> - Reactor模式
+> - Reactor模式（IO Multiplexing）
 >     1. 单Reactor单线程
 >     2. 单Reactor多线程
 >     3. 主从Reactor（Netty基于主从Reactor改进）
