@@ -1,7 +1,7 @@
 ``` properties
 .org 非盈利组织
 
-github仓库release版本会打一个tag
+git release版本会打一个tag
 
 jpg最小，png颜色丰富，gif支持简单透明的动态图
 
@@ -11,6 +11,10 @@ rc文件： Run-Control
 
 URL： 协议://host:端口/路径[?query][#fragment]
 
+CNN：卷积神经网络
+计算机三大难题：CPU，编译器，操作系统
+X86: 8086
+AMD64
 ```
 
 
