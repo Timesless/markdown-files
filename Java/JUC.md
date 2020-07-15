@@ -1,13 +1,16 @@
-#### java.util.concurrent
+``` properties
+高内聚下线程操作资源类（实例变量 + 实例方法）
 
-+ java.util.concurrent.atomic
-+ java.util.concurrent.locks
+判断（是否该自己执行）执行（执行逻辑）通知（执行完毕唤醒其它线程）
 
-> 高内聚下线程操作资源类（实例变量 + 实例方法）
->
-> 判断（是否该自己执行）执行（执行逻辑）通知（执行完毕唤醒其它线程）
->
-> 防止虚假唤醒（always be uesd in a loop）
+防止虚假唤醒（always be uesd in a loop）
+```
+
+java.util.concurrent
+
+java.util.concurrent.atomic
+
+java.util.concurrent.locks
 
 
 
@@ -41,35 +44,38 @@ private Object obj = new Object();
 
 > new Thread(Runnable target, String name)
 >
-> **既然能传Runnable接口，那么就能传入Runnable接口的子接口 RunnableFuture<V>**
+> 既然能传Runnable接口，那么就能传入Runnable接口的子接口 RunnableFuture<V>
 >
 > RunnableFuture接口的实现类： FutureTask，那么也就是Runnable接口的实现类
 >
 > 再看FutureTask的构造方法： FutureTask(Callable<V> callable)； FutureTask(Runnable)；
 >
-> **结论： FutureTask同时适配了Runnable，Callable**
+> ==FutureTask同时适配了Runnable，Callable==
 >
-> *new Thread(futureTask, "T1").start()*
+> new Thread(futureTask, "T1").start()
 >
 > + 对于同一对象的同一方法提交给Callable，只会执行一次
-> + get()；阻塞，请放在方法最后
+> + get()；阻塞，请放在方法最后调用
 
 
 
 #### Interface BlockingQueue
 
-| 方法 |   异常    |  特殊值  |     阻塞      |         超时阻塞         |
-| :--: | :-------: | :------: | :-----------: | :----------------------: |
-| 插入 |  add(E)   | offer(E) | <b>put(E)</b> | offer(E, long, TimeUnit) |
-| 删除 | remove()  |  poll()  | <b>take()</b> |   poll(long, TimeUnit)   |
-| 查看 | element() |  peek()  |     null      |           null           |
+| 方法 |   异常    |  特殊值  |    阻塞    |         超时阻塞         |
+| :--: | :-------: | :------: | :--------: | :----------------------: |
+| 插入 |  add(E)   | offer(E) | ==put(E)== | offer(E, long, TimeUnit) |
+| 删除 | remove()  |  poll()  | ==take()== |   poll(long, TimeUnit)   |
+| 查看 | element() |  peek()  |    null    |           null           |
 
 所有阻塞API都调用**xfer(E, boolean, int, long)**
 
-+ E： 如果put类型就是实际的值，反之null
-+ boolean：是否包含数据，put() 为true， 反之false
-+ int：执行类型，立即返回NOW，异步ASYNC，阻塞SYNC，超时TIMED
-+ long：超时数值，只在TIMED有作用
+> E： 如果put类型就是实际的值，反之null
+>
+> boolean：是否包含数据，put() 为true， 反之false
+>
+> int：执行类型，立即返回NOW，异步ASYNC，阻塞SYNC，超时TIMED
+>
+> long：超时数值，只在TIMED有作用
 
 ``` java
 private E xfer(E e, boolean haveData, int how, long nanos) {
@@ -134,10 +140,10 @@ private E xfer(E e, boolean haveData, int how, long nanos) {
 }
 ```
 
-> 阻塞队列实现类：
+> ==阻塞队列实现类：==
 >
 > + ArrayBlockingQueue -> 数组实现的有界阻塞队列
-> + LinkedBlockingQueue  -> 链表实现的有界（**默认为Integer.MAX_VALUE**）阻塞队列
+> + LinkedBlockingQueue  -> 链表实现的有界（默认为Integer.MAX_VALUE）阻塞队列
 > + PriorityBlockingQueue -> 支持优先级排序的无界阻塞队列
 > + DelayQueue -> 支持延时获取元素的无界阻塞队列，内部以PriorityQueue实现
 > + SynchronousQueue -> 单个元素的有界阻塞队列
@@ -173,7 +179,7 @@ public ThreadPoolExecutor(int corePoolSize,
                           RejectedExecutionHandler handler);
 ```
 
-#### 4大拒绝策略（maximum + workQueue.size()）
+#### 拒绝策略（maximum + workQueue.size()）
 
 + 默认抛出RejectedExecutionException -> new ThreadExecutor.AbortPolicy();
 + 将某些任务回退给调用者（main） -> **CallerRunsPolicy**
@@ -195,13 +201,13 @@ static ExexutorService newFixedThreadPool(int nThreads) {
 
 #### 分支合并框架
 
-+ **ForkJoinPool**
-+ **ForkJoinTask**
-+ **RecursiveTask extends ForkJoinTask**
++ ForkJoinPool
++ ForkJoinTask
++ RecursiveTask extends ForkJoinTask
 
 
 
-#### CompletableFuture 异步回调
+#### CompletableFuture异步回调
 
 ``` java
 // 无返回值异步
@@ -224,8 +230,8 @@ future.get();
 #### JMM
 
 > JMM需要保证可见性，原子性，有序性
-
-**Java内存模型规定所有实例变量存储在，主内存（堆），线程需将变量从主内存复制到工作内存，执行操作后复制回主内存，线程的通信需通过主内存**
+>
+> ==Java内存模型规定所有实例变量存储在，主内存（堆），线程需将变量从主内存复制到工作内存，执行操作后复制回主内存，线程的通信需通过主内存==
 
 ``` java
 // 资源类

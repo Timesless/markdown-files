@@ -189,7 +189,7 @@ class Proxyer implements InvocationHandler {
 class Demo {
     main(String[] args) {
         // 类加载器，接口的实现类，代理对象
-        Inter proxy = (Integer)Proxy.newInstance(Proxys.class.getClassLoader(), 
+        Inter proxy = (Inter)Proxy.newInstance(Proxys.class.getClassLoader(), 
                          new class[] {Impl.class},
                          new Proxyer(new Impl()));
         proxy.invoke(proxyMethod());

@@ -152,7 +152,7 @@ v-for="(value, key) in obj"
 
 + v-model（双向绑定）
 
-``` js
+``` vue
 // 基本使用
 <input type="text" v-model="message"></input>
 // 类似于 :value & @input 事件的结合
@@ -163,10 +163,33 @@ changeText(event) {
     this.message = event.target.value
 }
 
+// v-model结合radio
+<label><input type="radio" v-model='sex' value='1'>男</label>
+<label><input type="radio" v-model='sex' value='2'>男</label>
+sex: ''
+
 // v-model 结合 checkbox
+<label><input type='checkbox' id='agree' v-model='isAgree'>同意协议</label>
+isAgree: false // 布尔类型
+
 <input type="checkbox" value="game" v-model="hobbies">游戏
 <input type="checkbox" value="swim" v-model="hobbies">游泳
-hobbies: []
+hobbies: [] // 数组类型
+
+// v—model 与 select
+<select name='fruit' v-model='fruit'>
+    <option value='apple'>苹果</option>
+    <option value='cherries'>樱桃</option>
+    <option value='banana'>香蕉</option>
+</select>
+fruit: ''
+
+<select name='fruit' v-model='fruits' mutiple>
+    <option value='apple'>苹果</option>
+    <option value='cherries'>樱桃</option>
+    <option value='banana'>香蕉</option>
+</select>
+fruits: []
 
 // 修饰符
 v-model.lazy
@@ -511,27 +534,45 @@ this.$root 访问Vue实例
 + 规范
     + AMD
     + CMD
-    + CommonJS
-    + ES6
+    + **CommonJS**
+    + **ES6**
 + 模块引入和导出
 
 ``` js
 // CommonJS
+module.exports = {
+    age,
+    name
+}
 const http = require('http')
+
+
+
 // ES6
 import Vue from 'vue'
+import {name, age} from 'module'
+import * as a from 'module'
 
-// 导出
-export * as a
-export default const Vue 
+export default { }
+export {
+    name as nameA,
+    age
+}
 ```
 
-#### webpack
 
-JavaScript应用的**静态模块打包工具**
 
-1. npm install webpack -g
-2. npm install webpack --save-dev
+### webpack
+
+> 静态模块打包工具
+>
+> 全局安装：npm install webpack -g
+>
+> 运行时依赖：npm install webpack --save-dev
+>
+> **--save  == -S**
+>
+> **--save-dev == -D**
 
 + webpack.config.js
 
@@ -561,19 +602,41 @@ plugins {
 + webpack-plugins
     + uglifyjs
     + dev-server
-
 + 配置文件分离
+
+> webpack.base.conf
+>
+> webpack.dev.conf
+>
+> webpack.prod.conf
 
 #### babel
 
-**ES6转ES5**
+> ES6 ---> ES5
 
-+ webpack-vue配置过程
-+ template 和 el
+#### webpack-vue配置过程
+
+
+
+template 和 el
+
+> template会覆盖掉el所指向的dom元素
 
 #### vue终极使用方案
 
+```html
+<template>
+	// 这个template最终是不存在的，被vue-template-compiler编译为render
+</template>
+<script>
+export default {
+    
+}
+</script>
+<style scoped>
 
+</style>
+```
 
 ### Vue CLI详解
 
@@ -588,7 +651,7 @@ render --> virtual-dom --> ui
 >
 > runtime-only 会使用render中的函数调用替换掉el中的内容
 >
-> **template由vue-template-complier转换为render，且是开发时依赖，所以不存在template了**
+> template由开发时依赖vue-template-complier转换为render
 
 #### runtime + complier
 
@@ -607,45 +670,88 @@ new Vue({
 })
 
 // render 以.vue开发，template由vue-template-complier转换为render
+// 这里 el 与 $.mount 等价
 import App from 'app'
 new Vue({
     // el: '#app',
     // 传入标签 | 组件对象
     render: h => h(App)
 }).$mount('#app');
+
+// render:
+render: function(createElement) {
+    // 传入组件
+    return createElement(App)
+}
+
 ```
+
+
 
 + CLI2
-+ CLI3
 
-> @vue/cli-service 很多开发时依赖由该脚手架统一管理
->
-> runtime-only => vue-template-compiler将template渲染为render函数
-
-``` js
-// cl3修改配置
-1. vue ui
-2. vue.config.js vue会将此配置合并
+``` shell
+vue init webpack test
 ```
 
+
+
++ CLI3
+
+> “0配置”
+>
+> @vue/cli-service 该脚手架统一管理开发时依赖
+
+``` js
+vue create test
+
+// cl3修改配置
+1. vue ui 可视化
+// 创建vue.config.js
+2. vue会将vue.config.js合并
+
+// 项目目录解析
+node_modules: npm安装的包
+public: 静态文件，直接复制到dist
+src: 项目源码
+.browserslistrc：浏览器适配
+.gitignore: git忽略文件
+bable.config.js： babel配置文件
+package.json: 定义脚本
+package-lock.json: ^ ~
+```
+
+
+
 + ESLint
+
+
+
+#### 箭头函数
+
+``` js
+
+// this
+引用最近作用域中的this（向外层作用域中查找，直到有this的定义）
+
+// 函数在对象中定义，那么this就是该对象
+```
+
+
 
 ### vue-router
 
 + 路由
-+ 后端渲染，前后端分离，前端路由
-+ url的hash和html5的history模式
 
-+ 路由映射配置
-+ router-link
-+ router-view
-+ 动态路由
-+ 路由懒加载
-+ 路由嵌套
-+ 参数传递
-+ 全局导航守卫 navigation guard
-+ keep-alive
-+ tabbar
+> 路由映射表： mac地址 ---> 内网ip
+>
+> ReactRouter
+>
+> vue-router
+>
+> Angular: ngRouter
+
++ 后端渲染，前后端分离，前端路由
 
 ``` js
 // 后端渲染
@@ -656,14 +762,234 @@ jsp，请求的页面是服务器已经渲染的
 只有一个html页面，路由控制显示与跳转
 ```
 
-#### history模式
+
+
++ url的hash和html5的history模式
 
 ``` js
+// hash模式
+location.hash = 'foo'
+
 // h5的history模式
 history.go(1) == history.forward();
 history.go(-1) == history.back();
 history.pushState({}, 'title', 'url');
 history.replaceState({}, 'title', 'url');
+```
+
+
+
++ **路由映射配置**
+
+``` vue
+npm install vue-router -S
+// 创建router文件夹，index.js
+// index.js
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+
+// 安装插件
+Vue.use(VueRouter)
+
+const routes = [
+	// 让一个url对应一个组件
+	{
+		// 默认重定向到/home
+		path: '',
+		redirect: '/home'
+	}， {
+		path: '/home',
+		component: () => import('./Home.vue')
+	}， {
+		path: '/about',
+		component: () => import('./About.vue')
+	}
+]
+const router = new VueRouter({
+	routes,
+	mode: 'history'
+})
+// 导出
+export default router
+
+// 使用，在vue中使用
+```
+
+
+
++ router-link & router-view
+
+``` vue
+// 全局组件，默认被渲染为a标签
+// 活跃的router-link 会有 active-class这个类
+// replace
+<router-link to="/home">首页</router-link>
+<router-link to="/about" replace tag="button">关于</router-link>
+
+// 占位，组件被渲染出来之后放在哪里显示
+<router-view></router-view>
+
+// 不使用router-link
+<button @click="toAbout">关于</button>
+
+methods: {
+	toAbout() {
+		this.$router.push('/about')
+		// this.$router.place('/about')
+	}
+}
+```
+
+
+
++ **动态路由**
+
+``` vue
+// 在跳转的源页面
+<router-link :to='/user' + userId>用户</router-link>
+data() {
+	return {
+		userId: 'zhangsan'
+	}
+}
+// 此时路由index.js需这样配置
+{
+	path: '/user/:userId',
+	component: () => import('./Profile.vue')
+}
+
+// 在用户界面
+computed: {
+	userId() {
+		// this.$route当前活跃的路由对象
+		return this.$route.params.userId
+	}
+}
+```
+
+
+
++ 路由懒加载
+
+``` vue
+// ES6中，Vue异步组件配合webpack代码分割实现懒加载
+{
+	path: '/home',
+	// 懒加载
+	component: () => import('./Home.vue')
+}
+```
+
+
+
++ **路由嵌套**
+
+``` vue
+// 使用router-link
+<router-link to:'/profile/basic' ></router-link>
+<router-link to:'/profile/advance' ></router-link>
+
+// 配置子路由显示在哪
+<router-view></router-view>
+
+// 路由映射配置
+{
+	path: '/profile',
+	component: () => import('./Profile.vue'),
+	children: [
+		{
+			path: 'basic',
+			component: () => import('./Basic.vue')
+		}, {
+			path: '',
+			component: ...
+		}
+	]
+}
+```
+
+
+
++ **参数传递**
+
+> URL组成：协议://主机:端口/上下文/?query#片段
+
+``` vue
+// 页面跳转时传递参数
+1. params类型，配置动态路由（路径需配置）
+2. query类型（URL后面的就是query）
+const queryParam = {
+	path: '/profile',
+	query: {
+		name: 'hh',
+		age: 20
+	}
+}
+
+// 取数据
+const param = this.$route.query
+```
+
+
+
++ 导航守卫
+
+``` vue
+// navigation guard
+
+// 全局导航守卫
+// 前置
+$router.beforeEach((to, from, next) => {
+	document.title = to.matched[0].title;
+	next();
+})
+// 后置
+$router.afterEach((to, from) => {
+
+})
+
+
+// 路由独享守卫
+在每个路由中配置
+{
+	path: '/about',
+	component: () => import("./About.vue"),
+	// 独享守卫
+	beforeEnter: (to, from, next) => {
+		console.info(to);
+	}
+}
+
+// 组件内守卫
+// 在组件内定义
+beforeRouteLeave(to, from, next) {
+	
+	next();
+}
+```
+
+
+
++ keep-alive
+
+``` vue
+// 组件的状态是没有保存的，每次都是新创建组件
+
+<keep-alive exclude='Profile,User'>
+	<router-view />
+</keep-alive>
+
+// 这两个函数只有在组件keep-alive时才有用
+activated() {}, 
+deactivated() {}
+
+// 属性 include，exclude
+```
+
++ tabbar案例
+
+``` vue
+
 ```
 
 
