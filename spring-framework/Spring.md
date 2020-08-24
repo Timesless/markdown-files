@@ -1,4 +1,4 @@
-### IOC接口
+### 1 IOC接口
 
 IOC容器 -> 对象工厂
 
@@ -96,7 +96,7 @@ class MyFactory implements FactoryBean<T> {
 
 
 
-### Spring事务
+### 2 Spring事务
 
 ACID
 
@@ -165,7 +165,7 @@ try {
 
 
 
-### Spring 5
+### 3 Spring 5
 
 
 
@@ -238,7 +238,7 @@ public Mono<Void> addUser(@RequestBody User user) {
 
 // service
 Mono<Void> addUser(Mono<User> userMono) {
-     userMono.doOnNedt(person -> {
+     userMono.doOnNext(person -> {
         list.add(new User())
     }).thenEmpty(Mono.empty());
 }
@@ -315,9 +315,12 @@ class UserHandler {
 
 
 
-+ Observer, Observable
-+ Flow
-+ Reactor（实现Reactive规范的框架，io.projectreactor）
++ Observer, Observable（Java8及之前）
++ Flow（Java9）
++ Reactor（Pivotal：实现Reactive规范的框架，io.projectreactor）
++ Akka
++ RxJava（NetFlix）
++ Vert.x（RetHat）
 
  
 

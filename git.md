@@ -1,4 +1,4 @@
-## 1. 版本号控制
+## 1 版本号控制
 
 <kbd>工作区</kbd> -git add--> <kbd>暂存区</kbd> -git commit--> <kbd>本地库</kbd> 
 
@@ -12,7 +12,7 @@
 
 远程库 -- fork --> 自己的远程库 -- clone --> 本地库-- push -->自己远程库 -- pull request --> 审核 & merge --> 远程库
 
-## 2. 简介
+## 2 简介
 
 linux 中以.开始的是隐藏文件
 
@@ -26,7 +26,7 @@ git config --global user.name yangzl
 
 git config --global user.email yangzl@git.com
 
-## 3. 命令行
+## 3 命令行
 
 git --help
 
@@ -113,7 +113,7 @@ merge冲突解决同分支合并冲突解决
 
 <kbd>git merge origin/master</kbd> 将远程库分支合并到本地master分支
 
-## 4.图形化
+## 4 图形化
 
 .gitignore文件
 
@@ -122,7 +122,7 @@ merge冲突解决同分支合并冲突解决
 [core]
 	excludesfile = c:/Users/yangzl/Java.gitignore
 
-## 5.git工作流
+## 5 git工作流
 
 + **集中式工作流** 同SVN，所有提交到master分支
 + **GitFlow工作流** 多分支
@@ -135,7 +135,7 @@ merge冲突解决同分支合并冲突解决
 
 ## GitHub
 
-进大厂 TMD
+大厂 TMD
 
 ``` javascript
 // github搜索

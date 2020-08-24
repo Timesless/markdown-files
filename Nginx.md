@@ -1,4 +1,47 @@
-> 全局块：boss_process 和 worker_process数量
+### Nginx基础
+
+==nginx默认以daemon在后台运行，后台包含一个master进程，和多个worker进程。nginx也支持多线程模式==
+
+master监控管理worker，接收外界信号，向各woker发送信号。worker数量一般为cpu核数
+
+master进程先建立需要listen的socket（listenfd文件描述符），然后fork多个worker进程
+
+为保证只有一个进程处理该连接，worker在注册listenfd读事件前抢 accept_mutex，抢到互斥量（锁）的进程注册listenfd读事件， 调用accept接受连接，然后执行business，返回，断开连接。
+
+==每个worker只有一个主线程，采用异步非阻塞方式（具体系统调用是select/poll/epoll/kqueue）来处理连接请求，主线程循环执行所有准备好的事件==
+
+``` shell
+// 重启nginx
+kill -HUP pid  --0.8 later--> ./nginx -s reload
+./nginx -s stop
+```
+
+对于一个基本的web服务器来说，事件通常有三种类型：网络事件、信号、定时器
+
++ 网络事件：异步非阻塞
++ 信号：信号会中断程序当前运行，在改变状态后继续执行。如果是系统调用可能导致系统调用失败
++ 定时器：nginx定时事件在红黑树维护，每次epoll_wait之前，拿出定时器事件的最小时间
+
+
+
+#### Connection
+
+Connection是对tcp连接的封装。包括连接socket，读，写事件。
+
+``` c
+struct ngx_connection_t {
+}
+```
+
+
+
+
+
+### Nginx.conf
+
+
+
+> 全局块：boss_process & worker_process数量
 >
 > events块： 配置nginx & 用户网络连接
 >
@@ -18,7 +61,6 @@
 ./nginx -c configLocation
 
 ############ 反向代理配置
-
 # server1
 sever {
 	listen	80;
