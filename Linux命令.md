@@ -1,15 +1,100 @@
-#### 常用命令
+### 1 常用命令
 
 ``` shell
 # 递归转换当前路径下所有文件编码为UTF-8
 convmv -f gbk -t utf-8 -r --notest ./*
+
+man ascii
+
+# 设置时间
+datetimectl -h
+
+# 半连接队列默认大小，syn
+sysctl -a | grep 'tcp_max_syn_backlog'
+# 全连接队列，accept
+ssl -tnl
+
+# 创建多个文件夹
+mkdir /data/nginx/{ip,domain,port}
+
+# linux后台运行进程
+command &
+nohup command
+# 标准错误重定向到标准输出，标准输出重定向到test.log，&挂在到root进程
+nohup java -Xms1024m -Xmx1024m -Xmn384m -jar test.jar > test.log 2>&1 &
+
+# 查看yum源
+ls /etc/yum.repos.d
+yum repolist
+
+# 关闭selinux，重启生效
+vim /etc/sysconfig/selinux
+# 本次关闭selinux
+setenforce 0
+
+# 网络相关
+ss -tnl
+netstat -nlpt
+ps -ef | grep nginx
+
+# 网卡能识别的ip
+hostname -i
+
+# 复制到另一台主机
+scp -r /test/test.log root@192.168.1.106:/test/test.log
+```
+
+
+
+### 2 CentOS 7
+
+
+
+#### 2.1 日志系统
+
+设置 rsyslogd 和 systemd-journald
+
+``` shell
+# centos7日志系统为 journald
+mkdir /var/log/journal
+mkdir /etc/systemd/journald.conf.d
+cat > /etc/systemd/journal.confg.d/99-prophet.conf << EOF
+[Journal]
+# 持久化保存到磁盘
+Storage=persistent
+
+# 压缩历史日志
+Compress=yes
+
+SyncIntervalSec=8m
+RateLimitInterval=45s
+RateLimitBurst=1200
+
+# 最大占用空间
+SystemMaxUse=10G
+
+# 单日志最大
+SystemMaxFileSize=200M
+
+# 日志保存时间
+MaxRetentionSec=2week
+
+# 不把日志转发到syslog
+ForwardToSyslog=no
+EOF
+
+
+####################################
+systemctl restart systemd-journald
 ```
 
 
 
 
 
-#### CPU
+
+
+### 3 CPU与优化
 
 ``` shell
 # cpu核信息
@@ -42,7 +127,7 @@ stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s
 
 
 
-##### I/O高负载排查
+#### 3.1 I/O高负载排查
 
 ``` shell
 # 使用stress -c 1模拟cpu高负载
@@ -66,9 +151,7 @@ stress-ng -i 1 -hdd 1 --timeout 600
 
 
 
-
-
-##### 进程过多问题排查
+#### 3.2 进程过多问题排查
 
 ``` shell
 # 模拟24进程
@@ -81,7 +164,7 @@ pidstat -u 1
 
 
 
-#### CPU上下文
+#### 3.3 CPU上下文
 
 CPU上下文：CPU执行每个任务都需要知道任务从哪加载、从哪开始运行。PC和CPU寄存器被称为CPU上下文
 
@@ -125,7 +208,7 @@ sysbench --threads=64 --max-time=300 threads run
 
 
 
-#### **程序优化**
+#### 3.4 *程序优化
 
 1. 基本优化：程序逻辑的优化比如减少循环次数、减少内存分配，减少递归等等。
 2. 编译器优化：开启编译器优化选项例如`gcc -O2`对程序代码优化。
@@ -136,7 +219,7 @@ sysbench --threads=64 --max-time=300 threads run
 
 
 
-#### **系统优化**
+#### 3.5 *系统优化
 
 1. CPU 绑定：绑定到一个或多个 CPU 上，可以提高 CPU 缓存命中率，减少跨 CPU 调度带来的上下文切换问题
 2. CPU 独占：跟 CPU 绑定类似，进一步将 CPU 分组，并通过 CPU 亲和性机制为其分配进程。
@@ -145,3 +228,17 @@ sysbench --threads=64 --max-time=300 threads run
 5. NUMA 优化：支持 NUMA 的处理器会被划分为多个 Node，每个 Node 有本地的内存空间，这样 CPU 可以直接访问本地空间内存。
 6. 中断负载均衡：无论是软中断还是硬中断，它们的中断处理程序都可能会耗费大量的 CPU。开启 irqbalance 服务或者配置 smp_affinity，就可以把中断处理过程自动负载均衡到多个 CPU 上。
 
+
+
+
+
+### 4 Kernel
+
+``` shell
+###############################
+# Kernel相关命令与参数
+###############################
+
+# 内核版本
+uname -r
+```

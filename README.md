@@ -1,3 +1,5 @@
+### 1 noun
+
 ``` properties
 .org 非盈利组织
 
@@ -29,8 +31,6 @@ GCC是GNU（GNU's Not Unix）开发的编译器套装（GNU Compliler Collection
 
 贝尔实验室：Unix, C
 
-> man ascii
-
 final ReentrantLock lock = this.lock;
 访问局部变量（load）比getField快，同时也比getStatic快
 
@@ -45,12 +45,12 @@ Java引用和C++指针：
 
 servlet服务器：Jetty，Undertow，Reactor Netty，Tomcat
 
-** don't call us, we will call u
+** don't call us, we will call u，好莱坞原则
 
 IO Multiplexing = event driven IO
 
 多路复用库：
-evport > epoll > kqueue  > (poll / select)
+evport > epoll = kqueue  > (poll / select)
 
 select, poll, epoll本质上是同步I/O，当事件就绪后自己负责将数据从内核缓冲区拷贝到用户缓冲区，而异步I/O是内核负责数据的拷贝
 
@@ -61,24 +61,54 @@ JMH：（Java microbenchmark harness，Java微基准套件）
 
 函数式更新：不会直接修改已有对象，而是创建已有对象副本并更新
 
-# linux后台运行进程
-command &
-nohup command
-
-# 标准错误重定向到标准输出，标准输出重定向到test.log，&挂在到root进程
-nohup java -Xms1024m -Xmx1024m -Xmn384m -jar test.jar > test.log 2>&1 &
-
 Java中void只能修饰方法的返回值，并且返回值不含任何值。而对象类型Void实际包含了一个值，它有且仅有一个null值
 
 smp 对称多处理结构
+
+etcd: 可信赖的分布式键值存储服务
+
 ```
 
 
 
-``` js
+### 2 common shell 
+
+``` shell
+# 发送post命令
 curl -X POST "http://www.baidu.com"
 curl "http://www.baidu.com"
+
+ssh @192.168.17.105
+
 ```
 
 
 
+### 3 yaml 语法
+
+``` shell
+# yaml 语法
+1. 必须使用空格缩进
+2. ~ 表示 null
+3. yaml使用 ' 来转义，双引号的字符串不转义
+
+# yam支持的数据结构
+1. 对象 hash： { name: n, age: 18 }
+2. 数组
+	animal: [cat, dog]
+	animal:
+	- cat
+	- dog
+3. 纯量
+```
+
+
+
+### 4 网络
+
+``` shell
+# 自签证书
+cfssl：json格式
+openssl
+
+```
