@@ -46,7 +46,7 @@ git log --oneline
 
 git reflog
 
-![image-20200121115629960](image-20200121115629960.png)
+![image-20200121115629960](./assets/image-20200121115629960.png)
 
 #### 3.2 基于索引操作版本号
 
@@ -85,7 +85,7 @@ git branch hot_fix
 + git checkout master(**将其它分支合并到master**)
 + git merge [**有新内容的分支**]
 
-![image-20200121130458579](image-20200121130458579.png)
+![image-20200121130458579](./assets/image-20200121130458579.png)
 
 解决冲突：
 
@@ -95,39 +95,50 @@ git branch hot_fix
 
 #### 3.5 远程操作
 
+``` shell
 git remote -v
 
-<kbd>git remote add origin address</kbd>
+git remote add origin address
 
-<kbd>git clone -b 5.1.x spring-framework ./spring-framework</kbd>= git init + git remote add origin ...
+git clone -b 5.1.x spring-framework ./spring-framework = git init + git remote add origin ...
 
-<kbd>git push -u origin master</kbd>
+git push -u origin master
 
-<kbd>git pull origin master</kbd> = git fetch + git merge
+git pull origin master = git fetch + git merge
 
-<kbd>git fetch origin master</kbd>
+git fetch origin master
 
-<kbd>git checkout origin/master</kbd> 切换到远程分支查看内容，<kbd>git checkout master</kbd> 切换到本地master
+# 切换到远程分支查看内容
+git checkout origin/master
+# 切换到本地master
+git checkout master 
 
 merge冲突解决同分支合并冲突解决
 
-<kbd>git merge origin/master</kbd> 将远程库分支合并到本地master分支
+#c 将远程库分支合并到本地master分支
+git merge origin/master
+```
+
+
 
 ## 4 图形化
 
 .gitignore文件
 
+``` shell
 ~/.gitconfig文件中添加配置
-
 [core]
 	excludesfile = c:/Users/yangzl/Java.gitignore
+```
+
+
 
 ## 5 git工作流
 
 + **集中式工作流** 同SVN，所有提交到master分支
 + **GitFlow工作流** 多分支
 
-![image-20200121141353905](image-20200121141353905.png)
+![image-20200121141353905](./assets/image-20200121141353905.png)
 
 + **Forking工作流** 跨团队协作
 

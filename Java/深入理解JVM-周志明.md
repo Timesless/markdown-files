@@ -209,9 +209,9 @@
 ```
 
 > 1)操作数栈
-> 变量到操作数栈：iload,iload_,lload,lload_,fload,fload_,dload,dload_,aload,aload_
-> 操作数栈到变量：istore,istore_,lstore,lstore_,fstore,fstore_,dstore,dstor_,astore,astore_
-> 常数到操作数栈：bipush,sipush,ldc,ldc_w,ldc2_w,aconst_null,iconst_ml,iconst_,lconst_,fconst_,dconst_
+> 变量到操作数栈：iload,iload\_,lload,lload\_,fload,fload\_,dload,dload\_,aload,aload_
+> 操作数栈到变量：istore,istore\_,lstore,lstore\_,fstore,fstore_,dstore,dstore\_,astore,astore_
+> 常数到操作数栈：bipush,sipush,ldc,ldc_w,ldc2_w,aconst_null,iconst_ml,iconst\_,lconst\_,fconst\_,dconst_
 > 把数据装载到操作数栈：baload,caload,saload,iaload,laload,faload,daload,aaload
 > 从操作数栈存存储到数组：bastore,castore,sastore,iastore,lastore,fastore,dastore,aastore
 > 操作数栈管理：pop,pop2,dup,dup2,dup_xl,dup2_xl,dup_x2,dup2_x2,swap
@@ -815,7 +815,7 @@ Region中还有一类特殊的Humongous区域，专门用来存储大对象。G1
 
 衡量垃圾收集器三项指标：内存占用（Footprint），吞吐量（Throughput），延迟（Latency）
 
-![image-20200626192535576](image-20200626192535576.png)
+![image-20200626192535576](./assets/image-20200626192535576.png)
 
 ==在任意可管理的（譬如现在ZGC只能管理4TB以内的堆）堆容量下，实现垃圾收集的停顿都不超过十毫秒这种以前听起来是天方夜谭、匪夷所思的目标==
 
@@ -852,7 +852,7 @@ public class Bar {
 }
 ```
 
-<img src="../image-20200607011512867.png" style="zoom:67%;" />
+![20200607011512867](./assets/image-20200607011512867.png)
 
 ``` assembly
 1）mov%eax，-0x8000(%esp)：检查栈溢
@@ -903,7 +903,7 @@ JVM进程最大内存（受OS进程最大内存限制）
 
 
 
-![image-20200620162345401](image-20200620162345401.png)
+![image-20200620162345401](./assets/image-20200620162345401.png)
 
 ``` java
 public class AssemblyTest {
@@ -997,15 +997,13 @@ SourceFile: "AssemblyTest.java"
 
 ​															描述符标识字符含义
 
-| 标识符 | 含义           | 标识符 | 含义                       |
-| ------ | -------------- | ------ | -------------------------- |
-| B      | 基本类型byte   | J      | 基本类型long               |
-| C      | 基本类型char   | S      | 基本类型short              |
-| D      | 基本类型double | Z      | 基本类型boolean            |
-| F      | 基本类型float  | V      | 特殊类型void               |
-| I      | 基本类型int    | L      | 对象类型Ljava.lang.Object; |
-
-​	==数组类型，每一维使用一个前置“[”描述，如Java.lang.String\[ ][ ]被记录为"[[Ljava.lang.String;，int\[ ]被记录为"[I"==
+| 标识符 | 含义           | 标识符 | 含义                                                         |
+| ------ | -------------- | ------ | ------------------------------------------------------------ |
+| B      | 基本类型byte   | J      | 基本类型long                                                 |
+| C      | 基本类型char   | S      | 基本类型short                                                |
+| D      | 基本类型double | Z      | 基本类型boolean                                              |
+| F      | 基本类型float  | V      | 特殊类型void                                                 |
+| I      | 基本类型int    | L      | 对象类型Ljava.lang.Object;==数组类型每一维使用一个前置“[”描述，如Java.lang.String\[ ][ ]被记录为"[[Ljava.lang.String;，int\[ ]被记录为"[I"== |
 
 
 
@@ -1022,8 +1020,6 @@ SourceFile: "AssemblyTest.java"
 
 
 + 属性表集合
-
-
 
 
 
@@ -1438,13 +1434,13 @@ Public String concat(String s1, String s2) {
 
 偏向模式：1b，锁标识位：2b
 
-![image-20200626151852546](image-20200626151852546.png)
+![image-20200626151852546](./assets/image-20200626151852546.png)
 
 由于对象头信息是与对象自身定义的数据无关的额外存储成本，考虑到Java虚拟机的空间使用效率，Mark Word被设计成一个非固定的动态数据结构，以便在极小的空间内存储尽量多的信息。它会根据对象的状态复用自己的存储空间
 
 在代码即将进入同步块的时候，如果此同步对象没有被锁定（锁标志位为“01”状态），虚拟机首先将在当前线程的栈帧中建立一个名为锁记录（Lock Record）的空间，用于存储锁对象目前的Mark Word的拷贝（官方为这份拷贝加了一个Displaced前缀，即Displaced Mark Word）这时候线程堆栈与对象头的状态如图
 
-![image-20200626151925710](image-20200626151925710.png)
+![image-20200626151925710](./assets/image-20200626151925710.png)
 
 如果这个更新操作失败了，那就意味着至少存在一条线程与当前线程竞争获取该对象的锁。虚拟机首先会检查对象的Mark Word是否指向当前线程的栈帧，如果是，说明当前线程已经拥有了这个对象的锁，那直接进入同步块继续执行就可以了，否则就说明这个锁对象已经被其他线程抢占了。如果出现两条以上的线程争用同一个锁的情况，那轻量级锁就不再有效，必须要膨胀为重量级锁，锁标志的状态值变为“10”，此时Mark Word中存储的就是指向重量级锁（互斥量）的指针，后面等待锁的线程也必须进入阻塞状态。
 
@@ -1462,7 +1458,7 @@ Public String concat(String s1, String s2) {
 
 ##### 锁的转换
 
-![image-20200626152419227](image-20200626152419227.png)
+![image-20200626152419227](./assets/image-20200626152419227.png)
 
 ==一个对象已经计算过一致性哈希码（Object::hashCode() | System.identityHashCode(Object)，用户重写的hashCode不算）后，它就再也无法进入偏向锁状态了==；而当一个对象当前正处于偏向锁状态，又收到需要计算其一致性哈希码请求时，它的偏向状态会被立即撤销，并且锁会膨胀为重量级锁
 

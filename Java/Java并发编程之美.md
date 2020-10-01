@@ -21,7 +21,7 @@ public class AbstractQueuedSynchronizer {
 
 #### ReentrantLock
 
-<img src="image-20200607154146906.png"  />
+![20200607154146906](./assets/image-20200607154146906.png)
 
 ``` java
 // ReentrantReadWriteLock

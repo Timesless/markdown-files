@@ -80,7 +80,8 @@ I/O多路复用，一个进程可以监听多个描述符，一旦某个描述�
 ##### select
 
 ``` c
-int select(int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+int select(int n, fd_set *readfds, fd_set *writefds,
+           fd_set *exceptfds, struct timeval *timeout);
 ```
 
 select函数监视的fd有三类：
