@@ -212,7 +212,7 @@
 > 变量到操作数栈：iload,iload\_,lload,lload\_,fload,fload\_,dload,dload\_,aload,aload_
 > 操作数栈到变量：istore,istore\_,lstore,lstore\_,fstore,fstore_,dstore,dstore\_,astore,astore_
 > 常数到操作数栈：bipush,sipush,ldc,ldc_w,ldc2_w,aconst_null,iconst_ml,iconst\_,lconst\_,fconst\_,dconst_
-> 把数据装载到操作数栈：baload,caload,saload,iaload,laload,faload,daload,aaload
+> 把数组装载到操作数栈：baload,caload,saload,iaload,laload,faload,daload,aaload
 > 从操作数栈存存储到数组：bastore,castore,sastore,iastore,lastore,fastore,dastore,aastore
 > 操作数栈管理：pop,pop2,dup,dup2,dup_xl,dup2_xl,dup_x2,dup2_x2,swap
 > 2)运算与转换
@@ -318,13 +318,14 @@ Runtime Constant Pool是方法区一部分，Class文件中常量池表存放编
 
 #### 直接内存
 
-NIO（New Input / Output），基于通道（Channel）和缓冲（Buffer）的IO抽象，使用Native函数库分配==堆外内存==，ByteBuffer.allocateDirect(int capactity);
+NIO（New Input / Output），基于通道（Channel）和缓冲（Buffer）的IO抽象，使用Native函数库分配==堆外内存==，`ByteBuffer.allocateDirect(int capactity);`
 
 ``` java
 private static final int _1MB = 1024 * 1024;
 
 main(String[] args) {
     Field unsafeField = Unsafe.class.getDeclaredFields()[0];
+  	Field unsafe = Unsafe.class.getDeclareFields("theUnsafe");
     unsafeField.setAccessable(true);
     // 获取哪个对象的字段，这里为null
     Unsafe unsafe = (Unsafe)unsafeField.get(null);
@@ -340,7 +341,7 @@ main(String[] args) {
 
 
 
-#### 对象创建
+#### 2.1 对象创建
 
 ==new指令，在运行时常量池中找到类的符号引用，比如"com.demo.DemoClass"检查该符号引用代表的类是否被加载，如果没有需要执行类加载过程（加载，连接（验证，准备，解析），初始化），加载完成后由JVM分配内存（指针碰撞，空闲列表；采用何种方式由垃圾收集器决定），并将分配的内存初始化0值，设置对象头。至此JVM层面对象创建完成，随后调用构造方法invokespecial（\<init>()：已经合并构造块与构造器中代码）==
 
@@ -360,25 +361,25 @@ main(String[] args) {
 
 
 
-#### 对象内存布局
+#### 2.2 对象内存布局
 
-在堆中对象存储分为3部分：对象头，实例数据，对齐填充
+在堆中对象存储分为3部分：==对象头，实例数据，对齐填充==
 
 ##### 对象头
 
-​	Mark Word【动态数据结构】：哈希码，GC年龄，锁状态标志，线程持有的锁，偏向线程ID，偏向时间戳
++ Mark Word【动态数据结构】：哈希码，GC年龄，锁状态标志，线程持有的锁，偏向线程ID，偏向时间戳
 
-​	类型指针：对象指向它的类型元数据的指针，Java虚拟机通过这个指针来确定该对象是哪个类的实例
-
-​	【数组长度】
++ 类型指针：对象指向它的类型元数据的指针，JVM通过这个指针来确定该对象是哪个类的实例
 
 ==对象访问定位句柄和直接指针，Java选择直接指针，所以每个对象存储Klass pointer==
+
++ 如果是数组，还会有【数组长度】
 
 
 
 ##### 实例数据
 
-字段存储顺序会受到虚拟机分配策略参数（-XX：FieldsAllocationStyle参数）和字段在Java源码中定义顺序的影响。HotSpot虚拟机默认的分配顺序为longs/doubles、ints、shorts/chars、bytes/booleans、oops（Ordinary Object Pointers，OOPs），从以上默认的分配策略中可以看到，相同宽度的字段总是被分配到一起存放，在满足这个前提条件的情况下，在父类中定义的变量会出现在子类之前。如果HotSpot虚拟机的+XX：CompactFields参数值为true（默认就为true），那子类之中较窄的变量也允许插入父类变量的空隙之中，以节省出一点点空间。
+字段存储顺序会受到虚拟机分配策略参数（-XX：FieldsAllocationStyle参数）和字段在Java源码中定义顺序的影响。==HotSpot虚拟机默认的分配顺序为longs/doubles、ints、shorts/chars、bytes/booleans、oops（Ordinary Object Pointers，OOPs）==，从以上默认的分配策略中可以看到，相同宽度的字段总是被分配到一起存放，在满足这个前提条件的情况下，在父类中定义的变量会出现在子类之前。如果HotSpot虚拟机的+XX：CompactFields参数值为true（默认true），那子类之中较窄的变量也允许插入父类变量的空隙之中，以节省出一点点空间。
 
 
 
@@ -396,7 +397,7 @@ main(String[] args) {
 
 + 直接指针
 
-直接访问，需考虑如何存放类型数据地址（对象头）。对象移动后需要修改reference
+直接访问，需考虑如何存放类型数据地址（存放在对象头）。对象移动后需要修改reference
 
 
 
@@ -408,7 +409,7 @@ StackOverFlowError：
 
 OutofMemoryError：
 
-​	32位Windows单个进程内存限制2GB，除去-Xmx，-MaxMetaspace，由于PC很小忽略不计，排除直接内存，JVM进程本身消耗内存，剩下的内存由本地方法站和虚拟机栈分配。每个线程分配栈内存越大能建立的线程越少
+​	==32位Windows单个进程内存限制2GB，除去-Xmx，-XX:MaxMetaspace，由于PC很小忽略不计，排除直接内存，JVM进程本身消耗内存，剩下的内存由本地方法栈和虚拟机栈分配。每个线程分配栈内存越大能建立的线程越少==
 
 Java的线程是映射到操作系统的内核线程上，无限制地创建线程会对操作系统带来很大压力，上述代码执行时有很高的风险，可能会由于创建线程数量过多而导致操作系统假死。
 
@@ -426,6 +427,10 @@ while(true) { set.add(String.valueOf(i++).intern()); }
 
 JDK6会导致方法区溢出OutOfMemoryError: PermGen space
 
+
+
+#### String问题
+
 ``` java
 String str1 = new StringBuilder("计算机").append("软件").toString();
 sout(str1.intern() == str1);
@@ -436,7 +441,7 @@ sout(str2.intern() == str2);
 
 以上代码，str1在堆创建“计算机软件”对象，str1.intern()返回也是堆中该对象的引用所以相等
 
-但java，在启动时已存在，str2指向堆中对象，str2.intern()指向以存在对象，所以不想等
+但java，在启动时已存在，str2指向堆中对象，str2.intern()指向以存在对象，所以不相等
 
 
 
@@ -476,7 +481,7 @@ sout(str2.intern() == str2);
 
 ​	方法区中，常量引用的对象 
 
-​	基本类型对应的Class对象，常驻的异常对象（NPE，OOM），系统类加载器
+​	基本类型对应的Class对象，常驻内存的异常对象（NPE，OOM），系统类加载器
 
 ​	synchronized关键字持有的对象
 
@@ -490,7 +495,7 @@ sout(str2.intern() == str2);
 
 + 强引用（Strongly Reference）
 
-GC不会回收被强引用的对象 => "Object obj = new Object()"
+GC不会回收被强引用的对象 => `Object obj = new Object()`
 
 + 软引用（Soft Reference）
 
@@ -524,13 +529,11 @@ PhatomReference phatomRef = new PhantomReference<>(str);
 
 #### 方法区回收
 
-废弃的常量和不再使用的类型
+> 废弃的常量和不再使用的类型
+>
+> 在大量使用反射、动态代理、CGLib等字节码框架，动态生成JSP以及OSGi这类频繁自定义类加载器的场景中，通常都需要Java虚拟机具备类型卸载的能力，以保证不会对方法区造成过大的内存压力。
 
 常量池中字面量回收的例子，假如一个字符串“java”曾经进入常量池中，但是当前系统又没有任何一个字符串对象的值是“java”，换句话说，已经没有任何字符串对象引用常量池中的“java”常量，且虚拟机中也没有其他地方引用这个字面量。如果在这时发生内存回收，而且垃圾收集器判断确有必要的话，这个“java”常量就将会被系统清理出常量池。常量池中其他类（接口）、方法、字段的符号引用也与此类似。
-
-
-
-在大量使用反射、动态代理、CGLib等字节码框架，动态生成JSP以及OSGi这类频繁自定义类加载器的场景中，通常都需要Java虚拟机具备类型卸载的能力，以保证不会对方法区造成过大的内存压力。
 
 
 
@@ -538,19 +541,17 @@ PhatomReference phatomRef = new PhantomReference<>(str);
 
 绝大多数对象朝生夕灭，熬过越多次垃圾收集对象越难以消亡。
 
-部分收集（Partial GC）：指目标不是完整收集整个Java堆的垃圾收集
+部分收集（Partial GC）：指目标不是完整收集整个Java堆的垃圾收集。其中又分为：
 
-​	其中又分为：
++ 新生代收集（Minor GC/Young GC）：指目标只是新生代的垃圾收集。
 
-​		新生代收集（Minor GC/Young GC）：指目标只是新生代的垃圾收集。
-
-​		老年代收集（Major GC/Old GC）：指目标只是老年代的垃圾收集。目前只有CMS收集器会有单独收集老年代的行为。
++ 老年代收集（Major GC/Old GC）：指目标只是老年代的垃圾收集。目前只有CMS收集器会有单独收集老年代的行为。
 
 另外请注意“Major GC”这个说法现在有点混淆，在不同资料上常有不同所指，读者需按上下文区分到底是指老年代的收集还是整堆收集。
 
 混合收集（Mixed GC）：指目标是收集整个新生代以及部分老年代的垃圾收集。目前只有G1收集器会有这种行为。
 
-整堆收集（Full GC）：收集整个Java堆和方法区的垃圾收集。
+==整堆收集（Full GC）：收集整个Java堆和方法区的垃圾收集。==
 
 
 
@@ -570,7 +571,7 @@ PhatomReference phatomRef = new PhantomReference<>(str);
 
 ##### 根节点枚举
 
-迄今为止，所有收集器在根节点枚举这一步骤时都是必须暂停用户线程的，因此毫无疑问根节点枚举与之前提及的整理内存碎片一样会面临相似的“Stop The World”的困扰。
+> 迄今为止，所有收集器在根节点枚举这一步骤时都是必须暂停用户线程的，因此毫无疑问根节点枚举与之前提及的整理内存碎片一样会面临相似的“Stop The World”的困扰。
 
 ==当用户线程停顿下来之后，其实并不需要一个不漏地检查完所有执行上下文和全局的引用位置，虚拟机应当是有办法直接得到哪些地方存放着对象引用的。在HotSpot的解决方案里，是使用一组称为OopMap的数据结构来达到这个目的；==一旦类加载动作完成的时候，HotSpot就会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译过程中，也会在特定的位置记录下栈里和寄存器里哪些位置是引用。这样收集器在扫描时就可以直接得知这些信息了，并不需要真正一个不漏地从方法区等GC Roots开始查找。
 
@@ -598,7 +599,7 @@ PhatomReference phatomRef = new PhantomReference<>(str);
 
 ​	主动中断式：
 
-​		主动式中断的思想是当垃圾收集需要中断线程的时候，不直接对线程操作，仅仅简单地设置一个标志位，各个线程执行过程时会不停地主动去轮询这个标志，一旦发现中断标志为真时就自己在最近的安全点上主动中断挂起。轮询标志的地方和安全点是重合的，另外还要加上所有创建对象和其他需要在Java堆上分配内存的地方，这是为了检查是否即将要发生垃圾收集，避免没有足够内存分配新对象。
+​		主动式中断的思想是当垃圾收集需要中断线程的时候，不直接对线程操作，仅仅简单地设置一个标志位，各个线程执行过程时会不停地主动去轮询这个标志，一旦发现中断标志为真时就自己在最近的安全点上主动中断挂起。==**轮询标志的地方和安全点是重合的，另外还要加上所有创建对象和其他需要在Java堆上分配内存的地方，这是为了检查是否即将要发生垃圾收集，避免没有足够内存分配新对象。**==
 
 
 
@@ -656,7 +657,7 @@ void oop_field_store(oop* field, oop new_value) {
 
 
 
-##### 伪共享
+##### *伪共享
 
 False Sharing
 
@@ -758,11 +759,11 @@ Parallel Scavenge收集器的特点是它的关注点与其他收集器不同，
 
 ​	-XX: GCTimeRatio=19，即1 / 1 + 19 = 5%
 
--XX：+UseAdaptiveSizePolicy开启垃圾收集的自适应的调节策略
+​	-XX：+UseAdaptiveSizePolicy开启垃圾收集的自适应的调节策略
 
 
 
-Parallel Old：Parallel Scavenge老年代版本。使用标记-整理算法
+**Parallel Old**：Parallel Scavenge老年代版本。使用标记-整理算法
 
 
 
@@ -1079,12 +1080,12 @@ Java线程	<=>	工作内存
 
 Java内存模型的操作简化为4种：
 
-+ read：read load use
-+ write: assign store write
-+ lock
-+ unlock
++ ==read：read load use==
++ ==write: assign store write==
++ ==lock==
++ ==unlock==
 
-这4种操作定义的等效判断 => happens before
+这4种操作定义的等效判断 => happens before规则
 
 
 
@@ -1167,6 +1168,64 @@ volatile变量保证修改立刻同步回主存，普通变量无法保证这一
 + 有序性
 
 ==“线程内表现为串行语义”，在一个线程观察另一个线程所有操作都是无序的（指令重排，主存与工作内存同步延迟）==
+
+
+
+##### 指令重排
+
+> 令 a, b, x, y 初始值都为0
+>
+> 正常执行结果应该，x = y = 0
+>
+> 但可能经过如下重排：
+>
+> 这样x，y结果得出：x = 2, y = 1
+
+| 线程A | 线程B |
+| ----- | ----- |
+| x = a | y = b |
+| b = 1 | a = 2 |
+
+各自线程重排（==可能执行很多次也不会出现重排==）
+
+| 线程A | 线程B |
+| ----- | ----- |
+| b = 1 | a = 2 |
+| x = a | y = b |
+
+
+
+##### 内存屏障
+
+> 禁止volatile操作前以及volatile操作后的字节码指令，重排序到volatile区域
+>
+> 如果是volatile写，还需要将数据刷回主存（涉及MESI缓存一致性协议和总线嗅探机制）
+
+普通操作
+
+​	⬇
+
+————
+
+memory barrier
+
+————
+
+​	⬇
+
+volatile操作
+
+​	⬇
+
+————
+
+memory barrier
+
+————
+
+​	⬇
+
+​	...
 
 
 
@@ -1358,7 +1417,7 @@ Java中最终暴露的API是CAS操作
 
 如果一个变量V初次读取的时候是A值，并且在准备赋值的时候检查到它仍然为A值，那就能说明它的值没有被其他线程改变过了吗？这是不能的，因为如果在这段期间它的值曾经被改成B，后来又被改回为A
 
-CAS操作的“ABA问题”。J.U.C包为了解决这个问题，提供了一个带有标记的原子引用类AtomicStampedReference，它可以通过控制变量值的版本来保证CAS的正确性。不过目前来说这个类处于相当鸡肋的位置，大部分情况下ABA问题不会影响程序并发的正确性，如果需要解决ABA问题，改用传统的互斥同步可能会比原子类更为高效。
+CAS操作的“ABA问题”。J.U.C包为了解决这个问题，提供了一个带有标记的原子引用类AtomicStampedReference，它可以通过控制变量值的版本来保证CAS的正确性。==不过目前来说这个类处于相当鸡肋的位置，大部分情况下ABA问题不会影响程序并发的正确性，如果需要解决ABA问题，改用传统的互斥同步可能会比原子类更为高效。==
 
 
 

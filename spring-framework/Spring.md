@@ -1,6 +1,111 @@
-### 1 IOC接口
+
+
+## Spring 面试
+
+> Spring面试重点：
+>
+> + IOC容器
+> + AOP切面编程
+> + TX事务管理
+
+
+
+### IOC
+
+
+
+> DefaultSingletonBeanRegistry
+
+
+
+#### 循环依赖与三级缓存
+
+> 循环依赖：单例bean在setter注入时可解决，构造注入、prototype无法解决。
+>
+> 三级缓存：指3个Map（singletonObjects、singletonFactories、earlySingletonObjects）
+>
+> 
+>
+> bean初始化过程方法调用：
+>
+> getSingleton —> doCreateBean —> populateBean —> addSingleton
+>
+> 1. A实例化需要B的实例，A将自己放入三级缓存（空参构造已调用），去实例化B
+> 2. B实例化需要A，B首先去一级缓存查找，然后查找二级缓存，再查找三级缓存。在三级缓存中查询到A则将A放入二级缓存并移除三级缓存中的A
+> 3. B生命周期完成，将自己放入一级缓存（此时，A依然处于创建中的状态）
+> 4. A继续完成生命周期，去一级缓存查询B，然后完成创建，将A自己存入一级缓存
+
+``` java
+
+class DefaultSingletonBeanRegistry extends ... implements ... {
+  
+  // 一级缓存，存放构造完成的单例bean，这就是我们所谓的单例池
+  private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
+  
+  // 三级缓存，存放构造bean的工厂
+  private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
+  
+  // 二级缓存，存放生命周期未完成的半成品bean
+  // 实例化完成但未初始化完成（调用了空参构造，还未填充属性等操作）
+  private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
+  
+}
+
+```
+
+
+
+
+
+### AOP
+
+
+
+### TX
+
+
+
+
+
+
+
+### IOC接口
 
 IOC容器 -> 对象工厂
+
+
+
+#### Spring Bean生命周期
+
+> 1. 实例化bean对象
+> 2. 设置对象属性（依赖注入）
+> 3. Aware接口
+>     + BeanNameAware的setBeanName
+>     + BeanFacotryAware的setBeanFactory
+>     + ApplicationContextAware的setApplicationContext
+> 4. BeanPostProcessor接口
+>     + postProccessBeforeInitialzation（前置处理）
+>     + postProccessAfterInitialzation（后置处理）
+>
+> **经过上述几个步骤之后，对象已经被正确构造，如果想进行一些自定义的处理，可以通过BeanPostProcessor实现**
+>
+> 5. InitializingBean与init-method
+>
+> ==当BeanPostProccessor的前置处理完成后进入本阶段，InitializingBean接口只有一个函数==
+>
+> `afterPropertiesSet()`
+>
+> 在bean正式构造完成前加入我们自定义的逻辑，这里无法传递bean对象，因此没法处理对象本身，只能增加一些额外的逻辑处理
+>
+> 当然Spring为了降低对客户端代码的侵入性，給bean配置了init-method属性，init-method实质上仍然使用InitializingBean接口
+>
+> 6. DisposableBean与destroy-method
+>
+> 同init-method思想
+
+
+
+
 
 #### IOC实现
 
@@ -96,7 +201,7 @@ class MyFactory implements FactoryBean<T> {
 
 
 
-### 2 Spring事务
+### Spring事务
 
 ACID
 
@@ -165,7 +270,7 @@ try {
 
 
 
-### 3 Spring 5
+### Spring 5
 
 
 
@@ -211,7 +316,7 @@ class DispatcherHandler implements WebHandler {
 
 ##### Web MVC比较
 
-<img src="image-20200712120450476.png" style="zoom:67%;" />
+<img src="./assets/image-20200712120450476.png" style="zoom:67%;" />
 
 + less memeory， high throughput
 + 命令式编程  & 响应式编程（属于声明式编程范式）
