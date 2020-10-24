@@ -252,6 +252,8 @@ GET /myidx/_doc/_search
 
 ## Kibana
 
+// TODO
+
 
 
 ## Logstash
