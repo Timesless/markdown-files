@@ -1,4 +1,285 @@
-### 1 summarize
+### 1 HTTP - inter
+
+> + HTTP协议构建在TCP/IP协议之上，是应用层协议，默认端口80
+>
+> + HTTP无连接无状态
+>
+
+#### 1.1 请求报文
+
+> HTTP 请求分为三个部分：状态行、请求头、消息主体
+
+```http
+method request-URL version
+request headers
+
+entity body
+```
+
+##### GET
+
+> GET用于信息获取，且应该是安全和幂等（对同一URL多个请求返回相同结果）
+
+```http
+ GET /books/?sex=man&name=Professional HTTP/1.1
+ Host: www.example.com
+ User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.6)
+ Gecko/20050225 Firefox/1.0.1
+ Connection: Keep-Alive
+```
+
+
+
+##### POST
+
+> HTTP 协议中规定 POST 提交的数据必须在 body 部分中，但是协议中没有规定数据使用哪种编码方式或者数据格式，数据发送出去还要服务端解析才有意义
+>
+> **服务端通常根据请求头（headers）中Content-Type字段来获知请求的消息主题是用何种编码方式的**
+
+
+
++ application/x-www-form-urlencoded（表单提交默认方式）
+
+```http
+ POST /index.html HTTP/1.1
+ Host: www.example.com
+ User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.6)
+ Gecko/20050225 Firefox/1.0.1
+ Content-Type: application/x-www-form-urlencoded
+ Content-Length: 40
+ Connection: Keep-Alive
+
+ sex=man&name=Professional 
+```
+
++ multipart/form-data
+
+    > 使用表单上传文件时，表单enctype必须为multipart/form-data
+    >
+    > boudary用于分隔不同字段，每部分都以--boundary开始，紧接着是内容描述信息，然后是回车，最后是字段具体内容（文本或二进制），如果是文件还包含文件名和文件类型
+
+```http
+POST http://www.example.com HTTP/1.1
+Content-Type:multipart/form-data; boundary=----WebKitFormBoundaryrGKCBY7qhFd3TrwA
+
+------WebKitFormBoundaryrGKCBY7qhFd3TrwA
+Content-Disposition: form-data; name="text"
+
+title
+------WebKitFormBoundaryrGKCBY7qhFd3TrwA
+Content-Disposition: form-data; name="file"; filename="chrome.png"
+Content-Type: image/png
+
+PNG ... content of chrome.png ...
+------WebKitFormBoundaryrGKCBY7qhFd3TrwA--
+```
+
+
+
+##### Tips
+
+> - GET 可提交的数据量受到URL长度的限制，HTTP 协议规范没有对 URL 长度进行限制。这个限制是特定的浏览器及服务器对它的限制
+> - 理论上讲，POST 是没有大小限制的，HTTP 协议规范也没有进行大小限制，出于安全考虑，服务器软件在实现时会做一定限制（比如Nginx限制2M）
+> - 参考上面的报文示例，可以发现 GET 和 POST 数据内容是一模一样的，只是位置不同，一个在 URL 里，一个在 HTTP 包的包体里
+>
+> 
+>
+> 随着越来越多的 Web 站点，尤其是 WebApp，全部使用 Ajax 进行数据交互之后，我们完全可以定义新的数据提交方式，例如 `application/json`，`text/xml`，乃至 `application/x-protobuf` 这种二进制格式，只要服务器可以根据 `Content-Type` 和 `Content-Encoding` 正确地解析出请求，都是没有问题的。
+
+
+
+#### 1.2 响应报文
+
+> 1. 状态行
+> 2. 响应头
+> 3. 响应体
+>
+> 
+>
+> 常见的状态码有如下几种：
+>
+> - `200 OK` 客户端请求成功
+> - `301 Moved Permanently` 请求永久重定向
+> - `302 Moved Temporarily` 请求临时重定向
+> - `304 Not Modified` 文件未修改，可以直接使用缓存的文件。
+> - `400 Bad Request` 由于客户端请求有语法错误，不能被服务器所理解。
+> - `401 Unauthorized` 请求未经授权。这个状态代码必须和WWW-Authenticate报头域一起使用
+> - `403 Forbidden` 服务器收到请求，但是拒绝提供服务。服务器通常会在响应正文中给出不提供服务的原因
+> - `404 Not Found` 请求的资源不存在，例如，输入了错误的URL
+> - `500 Internal Server Error` 服务器发生不可预期的错误，导致无法完成客户端的请求。
+> - `503 Service Unavailable` 服务器当前不能够处理客户端的请求，在一段时间之后，服务器可能会恢复正常。
+
+``` http
+HTTP/1.1 200 OK
+
+headers
+
+response body
+```
+
+```http
+HTTP/1.1 200 OK
+
+Server:Apache Tomcat/5.0.12
+Date:Mon,6Oct2003 13:23:42 GMT
+Content-Length:112
+
+<html>...
+```
+
+
+
+#### 1.3 条件GET
+
+> 条件GET是HTTP协议为减少不必要的带宽浪费提出的一种方案
+>
+> 1. 客户端已经访问过某页面，并打算再次访问该页面
+> 2. 客户端询问自上次访问网站时间后是否更改了页面，如果服务器无更新则使用本地缓存即可，如果服务器显示已更新则发送更新給用户
+
+客户端第一次请求，会返回`If-Modified-Since`，根据该字段判断是否更新
+
+```http
+ GET / HTTP/1.1  
+ Host: www.sina.com.cn:80  
+ If-Modified-Since:Thu, 4 Feb 2010 20:39:13 GMT  
+ Connection: Close  
+```
+
+如果无更新，服务器返回`304 Not Modified`，浏览器可使用上次获取的文件（缓存）
+
+```http
+HTTP/1.0 304 Not Modified  
+Date: Thu, 04 Feb 2010 12:38:41 GMT  
+Content-Type: text/html  
+Expires: Thu, 04 Feb 2010 12:39:41 GMT  
+Last-Modified: Thu, 04 Feb 2010 12:29:04 GMT  
+Age: 28  
+X-Cache: HIT from sy32-21.sina.com.cn  
+Connection: close 
+```
+
+
+
+#### 1.4 持久连接
+
+> 非 Keep-Alive 模式时，每个请求/应答客户和服务器都要新建一个连接，完成之后立即断开连接（HTTP 协议为无连接的协议）；当使用 Keep-Alive 模式（又称持久连接、连接重用）时，Keep-Alive 功能使客户端到服务器端的连接持续有效，当出现对服务器的后继请求时，Keep-Alive 功能避免了建立或者重新建立连接。
+>
+> 如果客户端浏览器支持 Keep-Alive ，那么就在HTTP请求头中添加一个字段 Connection: Keep-Alive，这样客户端和服务器之间的HTTP连接就会被保持，不会断开（超过 Keep-Alive 规定的时间，意外断电等情况除外）
+>
+> 在 HTTP 1.1 版本中，默认情况下所有连接都被保持，如果加入 "Connection: close" 才关闭。目前大部分浏览器都使用 HTTP 1.1 协议，也就是说默认都会发起 Keep-Alive 的连接请求
+>
+> 
+>
+> + HTTP 长连接不可能一直保持，例如 `Keep-Alive: timeout=5, max=100`，表示这个TCP通道可以保持5秒，max=100，表示这个长连接最多接收100次请求就断开。
+> + 长连接如何判断传输结束？
+>     1. 判断传输数据是否达到了Content-Length 指示的大小；
+>     2. 动态生成的文件没有 Content-Length ，它是分块传输（chunked），这时候就要根据 chunked 编码的数据在最后有一个空 chunked 块，表明本次传输数据结束
+
+
+
+##### Transfer-Encoding
+
+> 目前只有一种取值：chunked
+>
+> 如果HTTP消息（请求或应答消息）Tranfer-Encoding为`chunked`，那么消息体由数量未定的块组成，并以最后一个大小为0的块为结束。
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
+
+25
+This is the data in the first chunk
+
+1A
+and this is the second one
+0
+```
+
+> tips:
+>
+> chunked 的优势在于，服务器端可以边生成内容边发送，无需事先生成全部的内容。HTTP/2 不支持 Transfer-Encoding: chunked，因为 HTTP/2 有自己的 streaming 传输方式（Source：[MDN - Transfer-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding)）。
+
+
+
+#### 1.5 HTTP Pipelining
+
+> **HTTP管线化**
+>
+> 默认情况下 HTTP 协议中每个传输层连接只能承载一个 HTTP 请求和响应，浏览器会在收到上一个请求的响应之后，再发送下一个请求。在使用持久连接的情况下，某个连接上消息的传递类似于`请求1 -> 响应1 -> 请求2 -> 响应2 -> 请求3 -> 响应3`。
+>
+> HTTP Pipelining（管线化）是将多个 HTTP 请求整批提交的技术，在传送过程中不需等待服务端的回应。使用 HTTP Pipelining 技术之后，某个连接上的消息变成了类似这样`请求1 -> 请求2 -> 请求3 -> 响应1 -> 响应2 -> 响应3`。
+>
+> 注意以下几点：
+>
+> - 管线化机制通过持久连接（persistent connection）完成，仅 HTTP/1.1 支持（HTTP/1.0不支持）
+> - 只有 GET 和 HEAD 请求可以进行管线化，而 POST 则有所限制
+> - 初次创建连接时不应启动管线机制，因为对方（服务器）不一定支持 HTTP/1.1 版本的协议
+> - 管线化不会影响响应到来的顺序，如上面的例子所示，响应返回的顺序并未改变
+> - HTTP /1.1 要求服务器端支持管线化，但并不要求服务器端也对响应进行管线化处理，只是要求对于管线化的请求不失败即可
+> - 由于上面提到的服务器端问题，开启管线化很可能并不会带来大幅度的性能提升，而且很多服务器端和代理程序对管线化的支持并不好，因此==现代浏览器如 Chrome 和 Firefox 默认并未开启管线化支持==
+
+
+
+#### 1.6 会话追踪
+
+什么是会话？
+
+客户端打开与服务器的连接发出请求到服务器响应客户端请求的全过程称之为会话。
+
+为什么需要会话跟踪？
+
+HTTP协议是“无状态协议”，无法保存客户的信息，这样每次请求都需要判断是否同一个用户，所以需要会话跟踪
+
+> 会话跟踪常用方法：
+>
+> 1. URL重写，在URL结尾添加附加数据标识该会话以识别不同用户
+>
+> 2. 隐藏表单域，将会话ID以隐藏元素提交到服务器
+>
+> 3. Cookie
+>
+>     Cookie是Web服务器发送给客户端的一小段信息，在客户端可以保存，客户端请求时可读取该信息发送到服务器。
+>
+>     Cookie可以被客户端禁用
+>
+> 4. Session
+>
+>     服务端创建一个session对象，产生一个sessionID用于标识不同用户
+>
+>     session依赖Cookie，如果Cookie被禁用那么session也会失效
+
+
+
+#### 1.7 跨站攻击
+
+> 1. CSRF（Cross-site request forgery，跨站请求伪造）
+>
+> **==只要协议，主机，端口其中有一个不相同即是跨站请求==**
+>
+> `http://www.baidu.com:80`
+>
+> `https://www.baidu.com:80`
+>
+> 如果是跨站请求，客户端会先发送OPTIONS方法去请求服务器是否允许跨站请求，如果允许才发送具体请求，这里会请求两次。
+>
+> 如何防止：
+>
+> + 关键操作只接受POST
+>
+> + Token（随机性，一次性）
+>
+> 
+>
+> 2. XSS（Cross Site Scripting，跨站脚本攻击）
+>
+>     如何防止：**对用户输入的HTML进行转义**
+
+
+
+
+
+### 3 summarize
 
 1. http版本
     Http于1990年问世，那时的HTTP并没有作为正式的标准被建立。这时的HTTP其实含有HTTP/
@@ -88,7 +369,7 @@ SSL的慢分两种。一种是指通信慢。另一种是指由于大量消耗CP
 
 
 
-### 2 Note
+### 4 Note
 
 #### 1.2 HTTP诞生
 

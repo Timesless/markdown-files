@@ -73,7 +73,7 @@ cd es_home/plugins && mkdir ik
 
 + PUT
 
-创建（指定文档ID）：`localhost:9200/idx/_doc/idx`
+创建（指定文档ID）：`localhost:9200/idx/_doc/id`
 
 + POST
 
@@ -172,7 +172,7 @@ DELETE /myidx/_doc/1	# 删除文档
 # v: includes column headings or not
 # s: 以列的别名排序字段名，多个以逗号分隔
 GET /myidx/_doc/1
-GET /myidx/_doc1/_search?q=name:yangzl
+GET /myidx/_doc/1/_search?q=name:yangzl
 
 
 #*****************************************
@@ -236,17 +236,249 @@ GET /myidx/_doc/_search
 
 
 
+#### 1.5 批量API
+
+> bulk
+>
+> `POST index/type/_bulk`
+
+``` shell
+# 批量操作
+POST /index/type/_bulk
+# 每两行为一组数据，_id指定文档ID
+# 第二行为传输的数据
+{"index": {"_id": "1101"}}
+{"name": "doug lea"}
+```
+
+
+
 > ”match“：模糊匹配
 >
 > “term”：精确匹配
 
 
 
-#### 1.5 集成Spring Boot
+#### 1.6 集成Spring Boot
 
 > Spring Data ElasticSearch
 >
 > [spring-elasticsearch](https://www.github.com/Timessless/spring-in-action5)
+
+
+
+### 2 测试
+
+> POST  /accounts/\_doc/\_bulk
+>
+> es查询领域特定语言：`queryDSL`
+
+
+
+#### 2.2 检索
+
+``` shell
+# github测试数据练习
+
+# match_phrase全文检索，不分词
+GET accounts/_search
+{
+  "query": {
+    "match_phrase": { "address": "mill lane"  }
+  }
+}
+
+# multi_match，会分词
+GET accounts/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "mill lane",
+      "fields": ["address", "city"]
+    }
+  }
+}
+
+
+# 复合查询 bool
+# must 相当于 =
+# must_not 相当于 != ，不会贡献得分
+# should 相当于 or
+GET accounts/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "gender": "F"}
+          
+        }, {
+          "match": { "address": "mill" }
+        }
+      ],
+      "must_not": [
+        {
+          "match": { "age": "38" }
+        }
+      ]
+    }
+  }
+}
+
+
+# filter过滤，不计算score
+GET accounts/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {"range": {
+          "age": {
+            "gte": 20,
+            "lte": 30
+          }
+        }}
+      ]
+    }
+  }
+}
+
+# match 全文检索，term精确匹配 == 字段.keyword == match_phrase
+
+# TODO
+GET accounts/_search
+{
+	"query": {
+		"term": {
+			"age": "28"
+		}
+	}
+}
+
+GET accounts/_search
+{
+	"query": {
+		"match": {
+			"address.keyword": "mill lane"
+		}
+	}
+}
+```
+
+
+
+#### 2.3 聚合
+
+``` shell
+
+# 聚合
+
+# 平均年龄
+GET accounts/_search
+{
+  "query": {
+    "match": { "address": "mill lane" }
+  },
+  "aggs": {
+  	"aggAgg": {
+  		"terms":{
+  			"field": "age",
+  			"size": 10
+  		}
+  	},
+    "ageAvg": {
+      "avg": {
+        "field": "age"
+      }
+    }
+  }
+}
+```
+
+
+
+
+
+#### 2.4 映射
+
+> `GET acccounts/_mapping`
+
+
+
+``` shell
+# 数据迁移
+
+POST _reindex
+{
+	"source": { "index": "accounts" },
+	"dest": { "index": "new_acccounts" }
+}
+```
+
+
+
+#### 2.5 分词
+
+> `POST _analyze`
+
+
+
+``` shell
+POST _analyze
+{
+	"analyzier": "stardard",
+	"text": "this is a english word"
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

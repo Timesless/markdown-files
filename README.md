@@ -70,10 +70,51 @@ etcd: 可信赖的分布式键值存储服务
 
 BM25：Best Matching，文档相似度得分算法
 
-字长，在X86和MIPS指令体系不相同，在80X86确定的字长为16b，在MIPS中字长为32b
+字长：在X86和MIPS指令体系不相同，在80X86确定的字长为16b，在MIPS中字长为32b
 机器字长：计算机一次整数运算所能处理的二进制数据的位数（32位字长、64位字长）
 目前x86-64机实际支持48位宽的寻址，256TB
+
+中断优先级：机器错误 > 时钟 > 磁盘 > 网络设备 >  终端 > 软件中断
 ```
+
+
+
+### 2020
+
+#### 10
+
+> **允许this出现在独立函数中，基本属于JavaScript的独创**
+>
+> + C支持独立函数，无this
+> + C++支持独立函数，但this只能出现在class方法中
+> + Python支持独立函数，但self只能出现在class方法中
+> + PHP支持独立函数，但$this只能出现在class方法中
+> + Java不支持独立函数，this只能出现在class方法中
+
+
+
+#### Curl协议
+
+``` shell
+# GET
+curl localhost:9200/_cat/indices
+
+# -d 用于发送POST请求的请求体
+# -X 指定HTTP方法
+
+# POST => application/x-www-form-urlencoded
+curl localhost:3000/api -X POST -d 'hello=world'
+
+# POST => JSON
+curl localhost:3000/api -X POST -D '{"hello": "world"}' --header "Content-Type: application/json"
+
+# 读取data.json文件内容
+curl localhost:3000/api -X POST -d @data.json --header "Content-Type: application/json"
+```
+
+
+
+
 
 
 
