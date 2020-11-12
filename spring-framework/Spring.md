@@ -61,11 +61,55 @@ class DefaultSingletonBeanRegistry extends ... implements ... {
 
 
 
+
+
 ### TX
 
+> 1. 事务传播属性
+>
+>     `Propagation.class`
+>
+>     1. REQUIRED
+>     2. SUPPORTS
+>     3. MANDATORY
+>     4. REQUIRES_NEW
+>     5. NOT_SUPPORTED
+>     6. NEVER
+>     7. NESTED
+>
+> 2. 事务隔离级别
+>
+>     `Isolation.class`
+>
+>     1. READ_UNCOMMITED
+>     2. READ_COMMITED
+>     3. REPEATABLE_READ
+>     4. SERIALIZABLE
 
 
 
+#### 1 方法内事务配置失效
+
+> Spring事务通过JDK动态代理对象完成的，事务配置失效围绕动态代理对象解决就行了
+
+解决：
+
+1. 将Spring代理从JDK动态代理替换为CGLIB
+2. Enable
+
+
+
+
+
+
+
+
+
+
+
+——————————————————————————————————————————————
+
+——————————————————————————————————————————————
 
 
 
@@ -267,6 +311,40 @@ try {
  * readOnly
  */
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -575,9 +575,87 @@ deadends = ["0201","0101","0102","1212","2002"], target = "0202"
 
 
 
+> **优化**：将deadend列表加入到visited集合中
+
+``` java
+int minReleaseLock(List<String> deadends, int target) {
+  
+  Queue<String> q;
+  Set<String> visited;
+  q.offer('0000');
+  visited.add('0000');
+  
+  int round = 0;
+  while (!q.isEmpty()) {
+    
+    // 将此轮的所有密码都向上向下转动
+    int sz = q.size();
+    for (int i = 0; i < sz; ++i) {
+      String cur = q.offer();
+      if (cur == target)
+        return rount;
+      // if (deadend.contains(cur))
+      //   continue;
+      for (int j = 0; j < 4; ++j) {
+        char[] arrUp = cur.toCharArray();
+        char cu = arrUp[j];
+        // 向上拨动
+        if (cu == '0') 
+          cu= '9';
+        else
+          cu += 1;
+        arrUp[j] = cu;
+        String up = new String(arrUp);
+        if (deadend.contains(up))
+          continue;
+        if (!visited.contains(up)) {
+          q.offer(up);
+          visited.add(ip)
+        }
+      	// 向下拨动
+        char[] arrDown = cur.toCharArray();
+        char cd = arrDown[j];
+        if (cd == '9')
+          cd = '0';
+        else
+          cd -= 1;
+        arrDown[j] = cd;
+        String down = new String(arrDown);
+        if (deadend.contains(down))
+          continue;
+        if (!visited.contains(down)) {
+          q.offer(down);
+          visited.add(down);
+        }
+      }
+    }
+    ++ round;
+  }
+  return -1;
+}
+```
 
 
 
+#### 4.3 双向BFS
+
+> 并不改变时间复杂度
+>
+> 从起点和终点同时向四周扩散，当两边有交集时停止。
+>
+> **局限性：必须知道终点在哪**
+>
+> 对于二叉树的最小高度无法得知终点，而转动密码锁是知道终点的
+
+``` java
+// 双向BFS，使用双队列同时poll()出元素放入set查看是否有交集，如果有则可以停止了
+
+Queue<String> q1;
+q1.offer(start)
+
+Queue<String> q2;
+q2.offer(end);
+```
 
 
 
@@ -586,4 +664,90 @@ deadends = ["0201","0101","0102","1212","2002"], target = "0202"
 > 
 
 
+
+### 6 二分查找
+
+> 二分查找的难点在于，比较时是否应该添加等号，mid是否需要 + 1等
+
+
+
+#### 6.1 Binary Search
+
+``` java
+int left = 0, right = nums.length - 1;
+while (left <= right) {
+  // 防止越界
+	int mid = left + (right - left) / 2;
+  if (nums[mid] == target) {
+    return mid;
+  } else if (nums[mid] < target) {
+    left = mid + 1;
+  } else {
+    right = mid - 1;
+  }
+  // 返回该数据应该在的位置
+  return -(left + 1);
+}
+```
+
+
+
+#### 6.2 寻找左侧边界的二分
+
+> 当nums[mid] == target的时候，此时不能return
+>
+> 收缩right = mid
+
+``` java
+if (nums[mid] == target) {
+  right = mid - 1;
+}
+return nums[left] == target ? left : -1;
+```
+
+
+
+#### 6.3 寻找右侧边界的二分
+
+> 当nums[mid] == target时，收缩left = mid + 1;
+
+``` java
+if (nums[mid] == target) {
+  left = mid + 1;
+}
+return nums[right] == target ? right : -1;
+```
+
+
+
+### 7 双指针
+
+> 双指针主要可能有以下3种情况
+>
+> + 对撞指针
+> + 快慢指针
+> + 滑动窗口
+
+
+
+#### 7.1 滑动窗口
+
+> 维护一个窗口，不断滑动，每次滑动更新答案
+
+``` java
+int left = 0, right = 0;
+while (right < nums.length) {
+  // 满足条件增大窗口
+  window.add(nums[right]);
+  ++ right;
+  // 更新结果数据
+  
+  // 缩小窗口
+  while (left < right) {
+    window.remove(nums[left]);
+    ++ left;
+    // 更新结果数据
+  }
+}
+```
 

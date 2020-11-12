@@ -1158,7 +1158,7 @@ main(String[] args) {
 
 
 
-**异常处理**
+####  异常处理
 
 无论是基于Future的异步API还是反应式异步API，==被调方法的概念体（conceptual body）都在另一个线程中执行，调用方很可能已经退出了执行==，不在调用异常处理器的作用域内。
 
@@ -1186,7 +1186,7 @@ interface Subscriber\<T> {
 
 
 
-#### 15.3 "线框-管道"模型
+#### 15.4 "线框-管道"模型
 
 ==理解和设计并发系统最好的方式是使用图形，我们称之为线框-管道模型==
 
@@ -1237,22 +1237,131 @@ r(left.get(), right.get());
 
 
 
-**同步API 与 异步API**
+#### 16.1 同步、异步API
 
-==阻塞和非阻塞通常用于描述操作系统的某种I/O实现。然而，这些术语也常常等价地用在非I/O的上下文中，即“异步调用”和“同步调用”。==
-
-
+> ==阻塞和非阻塞通常用于描述操作系统的某种I/O实现。然而，这些术语也常常等价地用在非I/O的上下文中，即“异步调用”和“同步调用”。==
 
 CompletableFuture类自身提供了大量精巧的工厂方法，使用这些方法能更容易地完成整个流程，还不用担心实现的细节
 
++ CompletableFuture API
+
 ``` java
 // 生产者方法会交由ForkJoinPool池中某个线程执行
-CompletableFuture.supplyAsync(() -> calculatePrice(product));
+CompletableFuture.runAsync(() -> calculatePrice(product));
+
+/**
+ * CompletableFuture 组合式异步 线程串行化 3组API
+ */
+
+// 不接受上次的返回值，且本身也不返回结果
+CompletableFuture<Void> thenRun(Runnable);
+CompletableFuture<Void> thenRunAsync(Runnable);
+CompletableFuture<Void> thenRunAsync(Runnable, Executor);
+
+// 接受上次的返回值，但本身不返回结果
+CompletableFuture<Void> thenAccept(Consumer<? super T>);
+CompletableFuture<Void> thenAcceptAsync(Consumer<? super T>);
+CompletableFuture<Void> thenAcceptAsync(Consumer<? super T>, Executor);
+
+// 接收上次的返回值，并且本身会返回执行后的结果
+CompletableFuture<U> thenApply(Function<? super T, ? extends U>);
+CompletableFuture<U> thenApplyAsync(Function<? super T, ? extends U>);
+CompletableFuture<U> thenApplyAsync(Function<? super T, ? extends U>, Executor);
+
+/*
+ * thenApply 与 thenCompose 的区别。 令 fx = x + 1, gx = x * 2
+ * thenApply 相当于  g(f(x))
+ * thenCompose 相当于 f(g(x))
+ */
+
+// 接受上次的返回值，并且本身会返回执行后的结果
+CompletableFuture<U> thenCompose(Function<? super T, ? extends U>);
+CompletableFuture<U> thenComposeAsync(Function<? super T, ? extends U>);
+CompletableFuture<U> thenComposeAsync(Function<? super T, ? extends U>, Executor);
+
+/**
+ * CompletableFuture 多任务组合
+ *
+ * runAfterEither / runAfterEitherAsync
+ * acceptEither
+ * applyToEither
+ *
+ * runAfterBoth / runAfterBothAsync
+ * thenAcceptBoth / thenAcceptBothAsync
+ * 无applyToBoth
+ */
+class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
+  
+}
+CompletableFuture<Void> runAfterEither(CompletionStage<?>, Runnable);
+CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?>, Runnbale);
+CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?>, Runnbale, Executor);
+
+// 调用
+future1.runAfterEither(future2, () -> {
+  sout("任务1、2任意完成一个，我就开始执行");
+});
+
+
+/*
+ * allOf 所有都执行完毕，根据源码 ->任务队列是一颗完全二叉树调度的
+ * anyOf 其中一个执行完毕
+ */
+public static CompletableFuture<Void> allOf(CompletableFuture<?>... cfs) {
+  return andTree(cfs, 0, cfs.length - 1);
+}
+static CompletableFuture<Void> andTree(CompletableFuture<?>[] cfs,int lo, int hi) {
+  CompletableFuture<Void> d = new CompletableFuture<Void>();
+  if (lo > hi) // empty
+    d.result = NIL;
+  else {
+    CompletableFuture<?> a, b;
+    int mid = (lo + hi) >>> 1;
+    if ((a = (lo == mid ? cfs[lo] :
+              andTree(cfs, lo, mid))) == null ||
+        (b = (lo == hi ? a : (hi == mid+1) ? cfs[hi] :
+              andTree(cfs, mid+1, hi)))  == null)
+      throw new NullPointerException();
+    if (!d.biRelay(a, b)) {
+      BiRelay<?,?> c = new BiRelay<>(d, a, b);
+      a.bipush(b, c);
+      c.tryFire(SYNC);
+    }
+  }
+  return d;
+}
 ```
 
 
 
-#### 16.1 Stream & CompletableFuture
+#### 结果与异常
+
+> whenComplete 可以感知结果但并不能修改结果
+>
+> exceptionally 感知异常
+>
+> handle 可以处理结果与异常
+
+``` java
+// 传入结果与异常，不返回结果
+CompletableFuture<T> whenComplete(BiConsumer<? superT, ? super Throwable>);
+CompletableFuture<T> whenCompleteAsync(BiConsumer<? superT, ? super Throwable>);
+CompletableFuture<T> whenCompleteAsync(BiConsumer<? superT, ? super Throwable>, Executor);
+
+// 传入异常，返回异常代表的结果
+CompletableFuture<T> exceptionally(Function<Throwable, ? extend T>);
+
+// 传入结果与异常，返回一个处理后的结果
+CompletableFuture<U> handle(BiFunction<? super T, Throwable, ? extends U>);
+CompletableFuture<U> handleAsync(BiFunction<? super T, Throwable, ? extends U>);
+CompletableFuture<U> handleAsync(BiFunction<? super T, Throwable, ? extends U>, Executor);
+```
+
+
+
+
+
+#### 16.2 Stream & CompletableFuture
 
 ==确定线程池大小：N<sub>threads</sub>=N<sub>CPU</sub>＊U<sub>CPU</sub>＊(1+W/C)==
 

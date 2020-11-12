@@ -1,3 +1,86 @@
+## K8S 示例
+
+
+
+> Pod —> API Server —> etcd —> Scheduler —> API Server —> etcd —> Kubelet —> 容器
+>
+> Pod组合一组容器（Nginx + Tomcat）
+>
+> Service组合一组Pod来对外提供服务
+
+
+
+### Master
+
++ Master
+    + apiserver（==对外暴露k8s的API接口，提供认证，授权，访问控制，API注册和发现等机制==）
+    + etcd（一致性和高可用的键值数据库，==保存k8s集群的数据==）
+    + scheduler（调度器在etcd中获取集群信息调度controller创建Pod，维持配置数量的Pod等）
+    + controller manager（部署管理Pod）
+        + ReplicaSet：确保预期的Pod数量
+        + Deploment：无状态应用部署
+        + StatefulSet：有状态应用部署
+        + DaemonSet：守护进程应用部署
+        + Job：一次性任务
+        + Cronjob：定时任务
+
+
+
+### Node
+
++ Node
+    + 容器运行环境（Docker）
+    + Kubelet（集群中每个节点的代理，所有操作Pod都发送给kubelet）
+    + Kube-proxy（网络代理）
+    + Fluentd（守护进程，提供集群层面的日志）
+
+
+
+
+
+### 资源编排文件yaml
+
+> 由apiVersion、kind、metadata、spec组成
+
++ apiVersion
++ kind
++ metadata
++ spec
+
+``` yaml
+# 生成yaml
+kubectl ... --dry-run -o yaml
+
+kutectl apply -f tomcat.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+	name: nginx
+	labels:
+		name: nginx
+spec:
+	containers:
+  - name: nginx
+  	image: nginx
+    ports:
+    - containerPort: 80
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### 1 k8s概念和架构
 
 > 特点：
@@ -20,16 +103,29 @@
 名词解释：
 
 + api server：所有服务访问统一入口
-+ CotrollerMaager：维持副本期望数量
+
++ CotrollerManager：维持副本期望数量
+
 + Scheduler：调度器负责接收任务，选择合适的节点分配任务
+
 + etcd：键值对数据库，存储K8S集群所有重要的持久化信息（恢复K8S集群只需还原etcd即可）
-+  Kubelet：与容器引擎交互实现容器的生命周期管理
+
+    
+
++ Kubelet：与容器引擎交互实现容器的生命周期管理
+
 + Kube-proxy：负责写入规则至 IPTABLES / IPVS 实现服务映射访问
+
 + CoreDNS：为集群中的SVC创建一个域名IP的对应关系解析
+
 + Dashboard：給K8S集群提供一个B/S结构的访问体系
+
 + Igress Cotroller：官方只能实现4层代理，Igress可以实现7层代理
+
 + Federatio：提供一个可以跨集群中心多K8S统一管理功能
+
 + Prometheus：提供一个K8S集群的监控
+
 + ELK：提供一个K8S集群日志统一分以介入平台Cotroller创建Pod，Service定义访问一组Pod的规则
 
 #### 1.3 网络通讯模式
