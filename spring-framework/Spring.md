@@ -20,6 +20,8 @@
 
 #### 循环依赖与三级缓存
 
+![image-20201114185147968](assets/image-20201114185147968.png)
+
 > 循环依赖：单例bean在setter注入时可解决，构造注入、prototype无法解决。
 >
 > 三级缓存：指3个Map（singletonObjects、singletonFactories、earlySingletonObjects）

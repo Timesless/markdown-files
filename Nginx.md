@@ -1,18 +1,196 @@
-### Nginx基础
+## 一 Nginx实战
 
-==nginx默认以daemon在后台运行，后台包含一个master进程，和多个worker进程。nginx也支持多线程模式==
+
+
+### 1. Nginx解析
+
+> nginx是一个轻量级、基于HTTP协议、高性能的反向代理服务器和静态Web服务器
+
+
+
+#### 1.1 正反向代理与网关
+
++ 代理
+
+    > 代理服务器的协议必定是HTTP
+    >
+    > 代理服务器只做URL重写或转发
+
+|               正向代理               |               反向代理               |
+| :----------------------------------: | :----------------------------------: |
+|           是对客户端的代理           |           是对服务端的代理           |
+|          架设在客户端的主机          |          架设在服务端的主机          |
+| 正向代理是要知道访问目标服务器的地址 | 客户端访问时无需知道真正的服务器地址 |
+|                                      |                                      |
+|               **特点**               |               **特点**               |
+|              隐藏客户端              |              隐藏服务端              |
+|                 缓存                 |                 缓存                 |
+|               提升速度               |        负载均衡、动静资源分离        |
+|                 授权                 |              分布式路由              |
+
+
+
++ 网关
+
+    > 
+
+
+
+
+
+
+
+
+
+
+
+### 2. Nginx.conf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3. Nginx调优
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 二 Nginx程序设计
+
+==nginx默认以daemon在后台运行，后台包含一个master进程，和多个worker进程。==
+
+> nginx也支持多线程模式
 
 master监控管理worker，接收外界信号，向各woker发送信号。worker数量一般为cpu核数
 
 master进程先建立需要listen的socket（listenfd文件描述符），然后fork多个worker进程
 
-为保证只有一个进程处理该连接，worker在注册listenfd读事件前抢 accept_mutex，抢到互斥量（锁）的进程注册listenfd读事件， 调用accept接受连接，然后执行business，返回，断开连接。
+> 为保证只有一个进程处理该连接，worker在注册listenfd读事件前抢 accept_mutex
+>
+> 抢到互斥量（锁）的进程注册listenfd读事件，调用accept接受连接，然后执行business，返回，断开连接。
 
 ==每个worker只有一个主线程，采用异步非阻塞方式（具体系统调用是select/poll/epoll/kqueue）来处理连接请求，主线程循环执行所有准备好的事件==
 
 ``` shell
-// 重启nginx
-kill -HUP pid  --0.8 later--> ./nginx -s reload
+# 向nginx发送信号
+
+# 重启nginx
+./nginx -s reload
 ./nginx -s stop
 ```
 
@@ -34,90 +212,3 @@ struct ngx_connection_t {
 ```
 
 
-
-
-
-### Nginx.conf
-
-
-
-> 全局块：boss_process & worker_process数量
->
-> events块： 配置nginx & 用户网络连接
->
-> http块： 反向代理，动静分离，缓存，日志...
->
-> + http全局
-> + server块：具体配置虚拟主机的代理（每个主机对应一个server块）
->     + server
->     + location 匹配
-
-``` properties
-# 命令
-./nginx
-# 向nginx进程发送信号
-./nginx -s stop | reload | quit | reopen
-# 指定配置文件启动
-./nginx -c configLocation
-
-############ 反向代理配置
-# server1
-sever {
-	listen	80;
-	server_name	localhost;	
-	
-	location / {
-        # 反向代理路径
-        proxy_pass	http://192.168.1.104:8080
-	}
-}
-
-# server2
-server {
-	...
-	# 正则匹配 ~
-	location ~ /dev/ {
-		proxy_pass	...
-	}
-	location ~ /prod/ {
-		proxy_pass	...
-	}
-}
-
-############ http块 负载均衡配置
-# 轮询 权重 hash fair
-# 集群列表
-upstream balanceserver {
-	# 1 权重
-	# server localhost:8081	weight=5;
-	# server localhost:8082	weight=10;
-	
-	# 2 ip_hash
-	ip_hash;
-	server localhost:8081	weight=5;
-	server localhost:8082	weight=10;
-	
-	# 3 fair 响应时间
-}
-server {
-	location / {
-		# banlanceserver
-		proxy_pass	http://balanceserver;
-	}
-}
-
-############ 动静请求分离
-# static -> html css img
-# dynamic -> tomcat
-
-# 方式一 -> 静态资源与动态资源独立部署到不同服务器
-location /img/ {
-	root /img/;
-	# 列出当前文件夹内容
-	autoindex	on;
-}
-location /css/ {
-	root /css/;
-}
-# 方式二 -> 动静资源发布到一台服务器，通过配置区分
-```
