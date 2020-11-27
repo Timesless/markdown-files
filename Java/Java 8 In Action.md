@@ -1,3 +1,123 @@
+## 附录
+
+### A 语言特性更新
+
+### B 类库更新
+
+#### 集合
+
+> Map，Iterable，Iterator，Collection，List，BitSet
+
+| 类 / 接口  | 新增方法                                                     |
+| ---------- | ------------------------------------------------------------ |
+| Map        | getOrDefault, forEach, compute, computeIfAbsent, computeIfPresent, merge, putIfAbsent, remove(k, v), replace, replaceAll |
+| Iterable   | forEach, Spliterator                                         |
+| Iterator   | forEachRemaining                                             |
+| Collection | removeIf, stream, parallelStream                             |
+| List       | replaceAll, sort                                             |
+| BitSet     | Stream                                                       |
+
+
+
+#### Comparator
+
+> Comparator接口现在同时包含默认方法和静态方法
+>
+> 不再像Collection那样单独提供Collections工具类了
+
+新增以下方法：
+
++ static Comparator natureOrder()
+
++ static Comparator reverseOrder()
+
++ static Comparator nullsFirst(Comparator)
+
++ static Comparator nullsLast(Comparator)
+
++ static Comparator comparing(Function keyExtractor)
+
++ static Comparator comparingInt(ToIntFucntion keyExtractor)
+
++ comparingLong
+
++ comparingDouble
+
++ comparingByKey
+
++ comparingByValue
+
++ static Comparator comparing(Function keyExtractor, Comparator keyComparator)
+
+    
+
++ default Comparator reversed()
+
++ default Comparator thenComparing(Comparator)
+
++ default Comparator thenComparing(Function keyExtractor)
+
++ default Comparator thenComparingInt(ToIntFunction keyExtractor)
+
++ default Comparator thenComparingLong(ToLongFunction keyExtractor)
+
++ thenComparingDouble
+
+
+
+> // Map.Entry新增
+>
+> // comparatorByKey
+>
+> // comparatorByValue
+>
+> ```
+> Comparator<String> sCmp = Comparator.<String>naturalOrder();
+> Comparator<Integer> iCmp = Comparator.<Integer>naturalOrder();
+> Comparator<Map.Entry<String, Integer>> byKey = Map.Entry.<String, Integer>comparingByKey();
+> Comparator<Map.Entry<String, Integer>> byKeyCmp = Map.Entry.<String, Integer>comparingByKey(sCmp);
+> Comparator<Map.Entry<String, Integer>> byVal = Map.Entry.<String, Integer>comparingByValue();
+> Comparator<Map.Entry<String, Integer>> byValCmp = Map.Entry.<String, Integer>comparingByValue(iCmp);
+> ```
+
+
+
+#### 原子操作
+
+`java.util.concurrent.atomic`
+
+`AtomicInteger / AtomicLong`
+
+`LongAdder / DoubleAdder`
+
+`LongAccumulator / DoubleAccumulator`
+
+> Atomicxxx支持单一变量的原子操作
+>
+> ==在多个线程频繁更新的情况下，尽量使用xxxAdder，xxxAccumulator而非Atomicxxx==
+
+
+
+#### ConcurrentHashMap
+
+> 为改善性能，需对`ConcurrentHashMap`内部数据结构进行调整。
+>
+> 典型情况下，Map是由数组 + 链表存储，当返回大量相同hashCode时，由于桶是List实现导致查询时间复杂度O(n)，在Java 8中，当桶长度超过8，且总元素数量超过64时，将桶链表实现转换为排序树（sorted tree），新的数据结构查询O(log(n))
+>
+> ==注意，这种优化仅在key可比较时进行（String，Number）==
+
+
+
+
+
+
+
+### C
+
+
+
+
+
 ## 第一部分
 
 第一部分旨在帮助你初步使用Java 8。学完这一部分，你将对Lambda表达式有充分的了解，并可以编写简洁而灵活的代码，能够轻松适应不断变化的需求。
@@ -606,12 +726,11 @@ Runtime.getRuntime().availableProcessors();
 #### 7.1 正确使用并行流
 
 + 并行流并不总是比顺序流快
-+ 留意装箱拆箱
++ 留意装箱拆箱，==自动装箱拆箱会大大降低性能==
 + limit，findFirst适合顺序流，findAny适用并行流
-
 + 还需考虑操作流水线的总计算成本（合并等操作）
-
-+ 数据流的数据结构是否易于分解
++ ==数据流的数据结构是否易于分解==
++ 对于小的数据集请使用串行流
 
 
 
@@ -652,7 +771,21 @@ else {
 class TestCalculator extends RecursiveTask<Long> {
     // fields ...
     // constructors ...
+  	private final long[] numbers;
+  	private final int start;
+  	private final int end;
+  	private final int  THRESHOLD = 100_000;
+  
+  	public TestCalculator(long[] numbers) {
+      this(numbers, 0, numbers.length);
+    }
+  	public TestCalculator(long[] numbers, long start, long end) {
+      this.numbers = numbers;
+      this.start = start;
+      this.end = end;
+    }
     
+  	// 计算和拆分逻辑都在这里定义
     @Override
     protected Long compute() {
         int len = end - start;
@@ -672,28 +805,83 @@ class TestCalculator extends RecursiveTask<Long> {
             return rightRs + leftTask.join();
         }
     }
+  
+  	main() {
+      long[] numbers = LongStream.rangeClose(1, 100_000_00).toArray();
+      task = new TestCalculator(numbers);
+      ForkJoinPool pool = ForkJoinPool.commonPool();
+      // 这里应该同步调用，因为异步调用也要等待结果
+      pool.invoke(task);
+    }
 }
 ```
 
 
 
-**正确使用Fork/Join Pool**
+#### 7.3 Fork/Join Pool最佳做法
 
 + 对一个任务调用join()会阻塞调用方，所以join()请留在最后
 
-+ ==不应该在RecursiveTask内部使用invoke()，应该直接调用compute() | fork()，只有顺序代码才执行invoke()（就是说第一次调用的时候使用）==
++ ==不应该在RecursiveTask内部使用invoke()，应该直接调用compute() | fork()，只有顺序代码才执行invoke()。==（invoke同步调用，submit()异步调用）
+
 + 需要预热，才被JIT编译器优化
-+ 分解为两个任务时，应该一个调用compute()，一个调用fork()（排进Fork/Join Pool池中执行）
+
++ 分解为两个任务时，应该一个调用compute()，一个调用fork()（fork()调用会排进Fork/Join Pool池中执行）
 
 + 使用多个ForkJoinPool是没有什么意义的。一般来说把它实例化一次，然后把实例保存在静态字段中，使之成为单例
 
+    `pool = ForkJoinPool.commonPool();`
+
 + 工作窃取（任务以双端链式队列保存）
 
++ 输入输出任务放在一个子任务里，计算放在另一个子任务里
 
 
-#### 7.3 Spliterator
+
+#### 7.4 Spliterator（可分迭代器）
 
 Spliterator也用于遍历数据源中的元素，但它是为了并行执行而设计的
+
+> tryAdvence 类似于 `iterator`，因为它会顺序的一个一个的使用Spliterator中的元素，并且如果还有其他元素要遍历就返回true
+>
+> trySplit() 是专门为 Spliterator接口设计的，它把其它一些元素划分为第二个Spliterator，让它们两个并行处理
+>
+> estimateSize() 估算还剩多少元素要遍历，即时不是精确的值（只是为了拆分更加均匀）
+
+``` java
+// T 是Spliterator遍历元素的类型
+public interface Spliterator<T> {
+  boolean tryAdcance(Consumer<? super T> action);
+  Spliterator<T> trySplit();
+  long estimateSize();
+  int characteristics();
+}
+```
+
+
+
+##### 7.4.1 Spliterator拆分过程
+
+> Spliterator拆分是一个递归过程，调用trySplit()会返回一个Spliterator()，递归拆分下去，直到不能再分隔，即trySplit() 返回null
+
+
+
+##### 7.4.2 characteristics
+
+| 特性       | 描述                                                         |
+| ---------- | ------------------------------------------------------------ |
+| ORDERED    | 元素有既定的顺序（如List），因此Spliterator拆分时也遵循这个顺序 |
+| DISTINCT   | 对于任意一对遍历过的元素xy，x.equals(y)返回false             |
+| SORTED     | 遍历的元素按照一个预定义的顺序排序                           |
+| SIZED      | 该Spliterator由一个已知大小的源建立，因此estimateSize()返回准确值 |
+| NONNULL    | 保证遍历的元素不为null                                       |
+| IMMUTABLE  | Spliterator的数据源不能修改，即遍历时不能添加，删除，修改任何元素 |
+| CONCURRENT | 该Spliterator的数据源可以被其它线程同时修改而无需同步        |
+| SUBSIZED   | 该Spliterator和它拆分的Spliterator都是SIZED                  |
+
+
+
+##### 7.4.3 实现自己的Spliterator
 
 
 

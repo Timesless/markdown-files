@@ -363,6 +363,12 @@ main(String[] args) {
 
 #### 2.2 对象内存布局
 
+> Object o = new Object();
+>
+> **开启指针压缩**，对象大小（16字节） = MarkWord（8字节）+ **KlassPointer（4字节）**+ 数组长度（0字节） + 实例数据（0字节）+ 对齐填充（4字节） 
+>
+> **关闭指针压缩**，对象大小（16字节）= MarkWord（8字节）+ **KlassPointer（8字节）**+ 数组长度（0字节）+ 实例数据（0字节） + 对齐填充（0字节）
+
 在堆中对象存储分为3部分：==对象头，实例数据，对齐填充==
 
 ##### 对象头
@@ -386,6 +392,34 @@ main(String[] args) {
 ##### 对齐填充
 
 自动内存管理系统要求对象起始地址必须是8字节的整数倍
+
+
+
+##### 查看对象内存
+
+1. jol
+
+``` xml
+<dependency>
+    <groupId>org.openjdk.jol</groupId>
+    <artifactId>jol-core</artifactId>
+    <version>0.10</version>
+</dependency>
+```
+
+``` java
+ClassLaout.parseObject(new Object()).toPrintable();
+```
+
+
+
+2. HSDB
+
+``` shell
+
+```
+
+
 
 
 
