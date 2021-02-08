@@ -114,6 +114,17 @@ curl localhost:3000/api -X POST -d @data.json --header "Content-Type: applicatio
 
 
 
+### 2021
+
+ ![虚拟内存布局](G:\Typora\markdown-files\assets\338626875-5d764bfc20e6d_articlex.png) 
+
+> 上图展示一个进程的虚拟内存划分，代码中使用的地址都是虚拟内存地址
+>
+> 堆栈和堆是2块不同功能的内存区域、
+>
+> + 栈在高地址，从高地址向低地址递增
+> + 堆在低地址，从低地址向高地址递增
+
 
 
 
@@ -127,6 +138,7 @@ curl "http://www.baidu.com"
 
 # ssh连接Linux shell
 ssh @192.168.17.105
+
 
 ```
 

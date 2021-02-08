@@ -1,5 +1,3 @@
-
-
 ### JVM指令集
 
 ``` properties
@@ -260,7 +258,7 @@ Java与C++之间有一堵由内存动态分配和垃圾收集技术所围成的�
 
 ### 1 运行时数据区
 
-插图：参考2020JVM
+![image](./assets/image-20200514212534611.png)
 
 
 
@@ -337,7 +335,7 @@ main(String[] args) {
 
 ### 2 对象
 
-如何创建、如何布局以及如何访问
+> 如何创建、如何布局以及如何访问
 
 
 
@@ -371,13 +369,22 @@ main(String[] args) {
 
 在堆中对象存储分为3部分：==对象头，实例数据，对齐填充==
 
+
+
 ##### 对象头
 
-+ Mark Word【动态数据结构】：哈希码，GC年龄，锁状态标志，线程持有的锁，偏向线程ID，偏向时间戳
-
++ Mark Word【动态数据结构】
+  + 哈希码
+  + GC年龄
+  + 锁状态标志
+  + 线程持有的锁
+  + 偏向线程ID
+  + 偏向时间戳
 + 类型指针：对象指向它的类型元数据的指针，JVM通过这个指针来确定该对象是哪个类的实例
 
-==对象访问定位句柄和直接指针，Java选择直接指针，所以每个对象存储Klass pointer==
+>  对象访问定位句柄和直接指针，Java使用直接指针，所以需要每个对象存储Klass pointer
+>
+> 对象的访问非常频繁，句柄需先访问句柄池，然后定位到对象
 
 + 如果是数组，还会有【数组长度】
 
@@ -454,7 +461,9 @@ Java的线程是映射到操作系统的内核线程上，无限制地创建线�
 ``` java
 Set<String> set = new HashSet<>();
 int i = 0;
-while(true) { set.add(String.valueOf(i++).intern()); }
+while(true) {
+  set.add(String.valueOf(i++).intern());
+}
 ```
 
 以上代码，JDK7以后由于存放在堆区，运行下去导致OutOfMemoryError: Java heap space
@@ -466,16 +475,18 @@ JDK6会导致方法区溢出OutOfMemoryError: PermGen space
 #### String问题
 
 ``` java
+// true
 String str1 = new StringBuilder("计算机").append("软件").toString();
 sout(str1.intern() == str1);
 
+// false
 String str2 = new StringBuilder("ja").append("va").toString();
 sout(str2.intern() == str2);
 ```
 
 以上代码，str1在堆创建“计算机软件”对象，str1.intern()返回也是堆中该对象的引用所以相等
 
-但java，在启动时已存在，str2指向堆中对象，str2.intern()指向以存在对象，所以不相等
+但java，在启动时已存在，str2指向堆中对象，str2.intern()指向已存在对象，所以不相等
 
 
 
@@ -489,7 +500,7 @@ sout(str2.intern() == str2);
 
 ### 3 垃圾收集与内存分配策略
 
-哪些内存需要回收，什么时候回收，如何回收
+> 哪些内存需要回收，什么时候回收，如何回收
 
 
 

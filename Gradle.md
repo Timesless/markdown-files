@@ -1,309 +1,360 @@
-### 1 Gradle
-
-#### Wapper
-
-``` tex
-gradle/wapper/gradle-wrapper.jar
-gradle/wapper/gradle-wrapper.propertites
-```
-
-``` bash
-# 执行./gradlew 会启动一个轻量级JVM，下载或查询gradlew配置文件中gradle版本
-./gradlew
-
-# 创建daemon
-./gradle help
-```
+## Gradle深入理解
 
 
 
-#### GradleUserHome
+### 1. Gradle基础
 
-``` tex
-./gradle
 
-./gradle/caches	保存jar包和其它信息，gradle会定期清理
 
-./gradle/init.gradle	配置全局替换仓库等
+#### 1.1 Distribution
 
-./gradle/wrapper	所有下载的wrapper
+
+
+#### 1.2 Wrapper
+
+``` shell
+./gradlew help
+
+./gradlew build.gradle
+
+# 1. 如果没有对应版本gradle，那么首先下载gradlew版本
+# 2. 启动client jvm 查找daemon
+# 3. 如果没有daemon运行，那么会先启动daemon jvm
+# 4. client发送参数，daemon执行构建，返回日志 
 ```
 
 
 
-#### Daemon
+#### 1.3 GradleUserHome
 
-> 第一次编译，gradle生成daemon JVM，每次执行编译会传递参数到兼容的daemon JVM进行编译，3小时未连接会自动销毁
+``` shell
+# 默认路径
+~/.gradle/
+
+# 保存jar包和其它信息，gradle会定期清理
+~/.gradle/caches
+
+# 可以配置全局替换仓库等
+~/.gradle/init.d/
+~/.gradle/init.gradle
+
+# 所有下载的wrapper
+~/.gradle/wrapper
+```
+
+
+
+#### 1.4 Daemon
+
+> gradle 首先启动一个 client jvm，与后台daemon jvm通讯
 >
-> 如果daemon JVM不兼容，则创建新的daemon
+> client只负责转发请求，传递参数，接受日志
+>
+> daemon默认3个小时后退出
+>
+> --no-daemon 不启用gradle daemon
 
 
 
-### 2 Grovvy
+### 2. Groovy基础
 
-通用的DSL语言 [grovvy dsl](http://docs.groovy-lang.org/docs/latest/html/documentation/core-domain-specific-languages.html)
+`https://github.com/Timesless/groovy-all`
 
 
 
-#### closure
+#### 2.1 动态调用与MOP
 
-``` gro
-/**
- * 定义闭包
- * 默认最后一行语句为返回值
- * 若不传递参数，那么默认参数名为 it
- */
-def closure = {
-	it * 2;
-	it + 1;
-}
 
-```
 
-#### method
+#### 2.2 闭包
 
 ``` groovy
-/**
- * 方法最后一个参数是闭包，把闭包放在括号外面（和Ruby定义相同）
- * 不产生歧义，可以省略调用时的括号
- */
-
-def method(int i, Closure c) {
-    c(i)
+// 闭包可以引用外部类的变量，这与lambda不同
+def str = "hello"
+def c4 = {
+  println("$str $it")
+/*
+    闭包会修改引用的外部变量
+    我认为是单线程的缘故，C++ lambda引用外部变量修改的是作为匿名类实例的字段，但不能改外部变量本身，Java则是final捕获的
+    Golang闭包修改的也是引用的外部变量作为匿名函数实例的字段的值，外部变量本身的值是不能修改的
+    js 和 groovy的闭包则可以修改外部变量本身的值，这应该是单线程的原因
+    闭包大约在2003年
+*/
+  str = "zzz"
 }
-
-println method(2, { it * 2 })
-println method(2) { it * 2 }
-
-// 例如，gradle配置文件
-plugins {
-    id("com.diffplug.gradle.spotless").version("3.13.0")
-}
-
-// 本质上等于plugins方法调用
-plugins(
-    { id("com.diffplug.gradle.spotless").version("3.13.0") }
-)
-
+c4.call("param")
+println("==== outer str = " + str)
 ```
 
 
 
 ### 3 Gradle构建
 
-idea打开==build.gradle==，提供gradle home，使用gradle wrapper
+Gradle生命周期
 
-> 生命周期
+> 我们通常只关心2个阶段
 >
-> 1. Initialization
+> + configure
+> + execution
+
+1. Initialization
+
+>  读取项目信息（settings.gradle），决定哪些项目参与构建，为每个需要构建的项目创建Project instance
 >
-> 读取项目信息，决定哪些项目参与构建，创建Project instance
->
-> 2. Configuration（不构建，只配置）
->
-> 对Project实例，运行build.gradle（从头到尾运行，本质是grovvy脚本）
->
-> 3. Execution
->
+> Project Instance是gradle构建的核心
+
+2. Configuration（不执行构建，只配置）
+
+> 对Project实例，运行build.gradle（从头到尾解释执行，本质是grovvy脚本）
+
+3. Execution
+
 > 执行配置阶段生成的task
 
-
-
-#### build.gradle使用第三方jar
-
 ``` groovy
-
-// build.gradle
-buildScript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
-      
-    }
-}
-
-apply plugin: 'java'
-...
-```
-
-
-
-#### build.gradle
-
-``` groovy
-/**
- * task方法调用
- * 创建name = 'hello world'的空白的task
- * 然后使用闭包（函数），去configure该task
- * 对task，调用闭包（函数）
- */
-task("hello world", {
-    println('configure')
-    
-    // doLast()调用，只是把闭包添加到任务的执行列表，但不执行它
-    doLast({
-        println('Executing task')
-    })
+// 定义一个task
+task('hello gradle', {
+  println('configure')
+  
+  doLast({
+    println('executing task')
+  })
 })
 
-// 对于grovvy dsl的支持，省略括号
-task('hello world') {
-    println('configure')
+// 执行结果
+configure
+executing task
+
+/*
+ * 解释：
+ *	2. configuration阶段『解释执行build.gradle文件（groovy脚本）』
+ *	3. excution阶段 
+ *
+ *  创建了一个hello gradle的任务，使用闭包「闭包是函数实例」去configure这个task
+ */
+```
+
+
+
+#### 3.1 Gradle核心模型
+
+``` groovy
+task("hello gradle") {
+    println("configureing ")
+    // Configure时，只是将该闭包添加到任务的动作列表的最前面，并不实际执行
+    doFirst {
+        println('Executing first')
+    }
     doLast {
-        println('Executing')
+        println('Executing last')
     }
 }
 ```
 
 
 
-#### Project
+#### 3.2 Project
 
 ``` groovy
-// api
-buildScript()
-afterEvaluate() 钩子函数
+project.parent.childProjects
+
 ```
 
 
 
-#### Task
+#### 3.3 Task
 
-``` groovy
-// api
-dependsOn();
-doLast();	// 只添加到任务列表不执行，直到任务被触发才执行
-doFirst();	// 只添加到任务列表不执行，直到任务被触发才执行
+> help任务是所有gradle项目存在的一个任务
+>
+> task是gradle最小单元，maven中最小单元是每一个lifecycle
 
-task('first') {
-    // configure时执行
-    println "configuring"
-    // 只有在task被调用，才会调用
-    doLast {
-        println "I'm first task"
-    }
-}
-
-(0..<5).each {
-    i -> task('task' + i) {
-        
-        // 所有偶数任务依赖于第一个任务
-        if (i & 1 == 0) { dependsOn('first') }
-        
-        def captureI = i;
+``` java
+// 定义4个任务
+// gradle task2
+// gradlew task2
+(0..<5).each { i ->
+    task('task' + i) {
+        // 偶数任务依赖 hello gradle 任务
+        if ((i & 1) == 0) {
+            dependsOn('hello gradle')
+        }
+        def captureI = i
         doLast {
-            println "task ${captureI}"
+            println("Excuting task" + captureI)
         }
     }
 }
-
-// 执行
-./gradlew task4
-
 ```
 
 
 
-#### Plugin
-
-插件：被复用的逻辑
-
-+ ==build.gradle中编写==
-+ ==buildSrc/src/main/java==
-+ ==提取到仓库，在buildScript中引入==
+#### 3.4 Lifecycle与Hook
 
 ``` groovy
+/*
+    钩子函数
+    任何无主的函数，gradle都在Project api中查找
 
-// build.gradle中编写， 提取到仓库，放到buildSrc/src/main/java
+    解释执行完build.gradle触发afterEvaluate hook
+ */
+afterEvaluate {
+    println('----- after evaluate -----')
+}
+```
+
+
+
+### 4. 插件编写
+
+
+
+#### 4.1 构建逻辑的复用
+
+
+
+#### 4.2 简单插件
+
+> build.gradle
+
+``` groovy
+// 使用已定义好的插件
+apply plugin: 'java'
+apply plugin: 'groovy'
+/*
+ * apply(Map<String, ?>)
+ * apply([plugin: 'java'])
+ * groovy 语法糖可省略map的[] -> apply(plugin: 'java')
+ * 不产生歧义的情况下可省略() -> apply plugin: 'java'
+ */
+```
+
+
+
+#### 4.3 script插件
+
+> build.gradle
+
+``` groovy
+/*
+    gradle插件编写
+
+    1. build.gradle class MyPlugin implements Plugin<Project> {}
+    2. user.dir/buildSrc/src/main/java/MyPlugin2 implements <Project> {}
+
+    apply plugin: MyPlugin
+    apply plugin: MyPlugin2
+ */
 class MyPlugin implements Plugin<Project> {
-    
-    @override
+    @Override
     void apply(Project project) {
-        (0..<5).each {
-            i -> project.task('task' + i) {
-
-                // 所有偶数任务依赖于第一个任务
-                if (i & 1 == 0) { dependsOn('first') }
-
-                def captureI = i;
+        (5..<10).each { i ->
+            project.task('task' + i) {
+                println('....plugin task' + i +' configure....')
+                // 闭包的延迟执行需捕获外部变量
+                def captureI = i
                 doLast {
-                    println "task ${captureI}"
+                    println("Excuting task" + captureI)
                 }
             }
         }
     }
 }
 
-apply plugin: MyPlugin
+/*
+    语法糖 apply plugin: MyPlugin
+    desugar，本质等价于
+    apply([plugin: MyPlugin])
 
-/**
- * desugar
- * 参数是一个map，可以去掉方括号
- * 查找MyPlugin，执行apply()
+    当参数是map时，可以省略[]
+    当不产生歧义时，方法调用的()可以省略
  */
-apply([plugin: MyPlugin])
-
-
-// 将Myplugin定义为本地脚本 | http url脚本
-apply plugin: 'http://...'
+apply plugin: MyPlugin
+apply plugin: MyPlugin2
 ```
 
 
 
-##### Plugin方式2
+#### 4.4 buildSrc插件
 
-``` grovvy
-// build.gradle
+> user.dir/buildSrc/src/main/java/MyPlugin.java
 
-buildScript {
+``` java
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+/**
+ * @author yangzl
+ * @date 2021/2/8
+ * @desc
+ *
+ * 		gradle 插件抽取到 Java类
+ * 		该类不需要声明packeage
+ *
+ * 	gradle整个过程是如何实现的呢？
+ * 	该过程类似于maven的install 本地仓库
+ * 		1. 通过约定在buildSrc
+ * 		2. 在外层build.gradle运行之前先编译buildSrc
+ * 		3. 将buildSrc打包的结果libs下，放入buildScript 下 dependencies { classpath 中 }，见build.gradle
+ *
+ */
+public class MyPlugin2 implements Plugin<Project> {
 
+	@Override
+	public void apply(Project project) {
+		for (int i = 10; i < 15; i++) {
+			System.out.println("**** java plugin" + i + " configure ****");
+			project.task("task" + i);
+		}
+	}
 }
 ```
 
 
 
-##### Plugin方式3
+#### 4.5 发布的插件
 
-> 通过约定在
->
-> buildSrc/src/main/java/MyPlugin.java
->
-> 然后在 build.gradle中使用
->
-> apply plugin: Myplugin
->
-> 
+> binary插件
+
+将项目独立，发布到仓库，在buildScript {} 中引入
+
+==apply plugin: 'java'是将插件引入到buildScript{}中，供configure阶段使用==
 
 
 
-### 构建聚合项目
+### 5. 实际插件分析
+
+
+
+
+
+
+
+### 6. 构建聚合项目
 
 ``` groovy
 // parent -> build.gradle
 allProjects {
-    group 'com.yangzl'
-    version: '1.0-SNAPSHOT'
-    
-    apply plugin: 'java'
-    
-    sourceCompatibility = 1.8
-    
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
-    
-    dependencies {
-        compile group: 'org.spring.framework', name: 'spring-context', version: '5.0.2.RELEASE'
-        testCompile group: 'junit', name: 'junit', version: '4.12'
-    }
+  group 'com.yangzl'
+  version: '1.0-SNAPSHOT'
+
+  apply plugin: 'java'
+
+  sourceCompatibility = 1.8
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+
+  dependencies {
+    compile 'org.spring.framework:spring-context:5.0.2.RELEASE'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+  }
 }
 
 // service -> build.gradle
 dependencies {
-    complie project(":dao")
+  complie project(":dao")
 }
 
 // dao -> build.gradle
