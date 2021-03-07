@@ -2,6 +2,67 @@
 
 
 
+
+
+### gradle 使用
+
+``` groovy
+plugins {
+    id 'org.springframework.boot' version '2.4.2'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+bootJar {
+    enabled = true
+}
+
+group = 'com.yinhai'
+version = '1.0-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+  	mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation 'cn.hutool:hutool-all:5.5.8'
+    implementation 'com.alibaba:druid-spring-boot-starter:1.1.23'
+    implementation 'org.apache.commons:commons-lang3:3.10'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.75'
+
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.1.4'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'mysql:mysql-connector-java'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+
+    doFirst {
+        jvmArgs "-XX:MetaspaceSize=128m", "-XX:MaxMetaspaceSize=128m", "-Xms1500m", "-Xmx1500m", "-Xmn700m"
+    }
+}
+
+```
+
+
+
+
+
 ### 1. Gradle基础
 
 
@@ -90,7 +151,9 @@ println("==== outer str = " + str)
 
 ### 3 Gradle构建
 
-Gradle生命周期
+
+
+#### 3.0 Gradle生命周期
 
 > 我们通常只关心2个阶段
 >
@@ -139,6 +202,8 @@ executing task
 #### 3.1 Gradle核心模型
 
 ``` groovy
+// 每个Task由闭包configure
+// task(String, Closure)
 task("hello gradle") {
     println("configureing ")
     // Configure时，只是将该闭包添加到任务的动作列表的最前面，并不实际执行
@@ -153,20 +218,43 @@ task("hello gradle") {
 
 
 
-#### 3.2 Project
+#### 3.2 Project API
+
+> 每一个参与构建的项目对应一个Project实例「与build.gradle构建脚本是一对一的关系」
+>
+> Project 是一系列 Task的集合
+>
+> 每个Task由闭包configure
+
+
 
 ``` groovy
-project.parent.childProjects
-
+// 管理configurations
+ConfigurationContainer getConfigurations()
+// 管理dependencies
+DependencyHandler getDependencies()
+// 管理artifacts
+ArtifactHandler getArtifacts()
+// 管理repositories
+RepositoryHandler getRepositories()
 ```
 
 
 
-#### 3.3 Task
+
+
+#### 3.3 Task API
 
 > help任务是所有gradle项目存在的一个任务
 >
-> task是gradle最小单元，maven中最小单元是每一个lifecycle
+> task是gradle构建的最小单元，maven中最小单元是每一个lifecycle
+>
+> + 编译类
+> + 运行单元测试
+> + 压缩WAR文件
+> + ...
+
+
 
 ``` java
 // 定义4个任务

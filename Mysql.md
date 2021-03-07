@@ -99,3 +99,26 @@ DELETE FROM table WHERE ?
 > 当update SQL发送给MySQL后，MySQL Server根据where条件请求InnoDB读取第一条满足条件的记录，InnoDB返回记录并加锁（current read）。待MySQL Server收到加锁的记录后，再发起一个update请求更新这条记录，完成后再取下一条记录
 >
 > **由此update包含一个当前读，同理delete，insert**
+
+
+
+
+
+## 高性能MySQL
+
+
+
+
+
+
+
+
+
+## 常用记录
+
+``` mysql
+
+// session 层面关闭bin_log
+set sql_log_bin = 0;
+```
+

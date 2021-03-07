@@ -2,6 +2,8 @@
 
 ### A 语言特性更新
 
+
+
 ### B 类库更新
 
 #### 集合
@@ -1591,13 +1593,15 @@ public List<String> findPrices(String product) {
 
 
 
-#### 16.4 整合CompletableFuture
+#### 16.4 CompletableFuture编排任务
 
-你需要将两个完全不相干的CompletableFuture对象的结果整合起来，而且你也不希望等到第一个任务完全结束才开始第二个任务。这时候应该调用thenCombine()，它接受名为BiFunction的第二个参数，这个参数定义了当两个CompletableFuture对象完成计算后，结果如何合并；如果使用thenCombineAsync会导致BiFunction中定义的合并操作被提交到线程池中，那么由另一个任务以异步的方式执行。
+> + thenCompose 方法允许你对两个 CompletionStage 进行流水线操作，第一个操作完成时，将其结果作为参数传递给第二个操作。「**fx.compose(gx) == g(f(x))**」
+>
+> + 你不希望等到第一个任务完全结束才开始第二个任务。这时候应该调用thenCombine()「**fx.combine(gx) == f(g(x))**」
 
+​		你需要将两个完全不相干的CompletableFuture对象的结果整合起来，而且你也不希望等到第一个任务完全结束才开始第二个任务。这时候应该调用thenCombine()，它接受名为BiFunction的第二个参数，这个参数定义了当两个CompletableFuture对象完成计算后，结果如何合并；如果使用thenCombineAsync会导致BiFunction中定义的合并操作被提交到线程池中，那么由另一个任务以异步的方式执行。
 
-
-和你之前看到的thenCompose和thenCombine方法一样，thenAccept方法也提供了一个异步版本，名为thenAcceptAsync。异步版本的方法会对处理结果的消费者进行调度，从线程池中选择一个新的线程继续执行，不再由同一个线程完成CompletableFuture的所有任务。因为你想要避免不必要的上下文切换，更重要的是你希望避免在等待线程上浪费时间，尽快响应CompletableFuture的completion事件，所以这里没有采用异步版本。
+​		和你之前看到的thenCompose和thenCombine方法一样，thenAccept方法也提供了一个异步版本，名为thenAcceptAsync。异步版本的方法会对处理结果的消费者进行调度，从线程池中选择一个新的线程继续执行，不再由同一个线程完成CompletableFuture的所有任务。因为你想要避免不必要的上下文切换，更重要的是你希望避免在等待线程上浪费时间，尽快响应CompletableFuture的completion事件，所以这里没有采用异步版本。
 
 ``` java
 CompletableFuture[] futures = ...;
