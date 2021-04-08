@@ -1,4 +1,4 @@
-### noun
+### A
 
 ``` properties
 .org 非盈利组织
@@ -93,7 +93,7 @@ BM25：Best Matching，文档相似度得分算法
 
 
 
-#### Curl协议
+#### Curl 协议
 
 ``` shell
 # GET
@@ -126,6 +126,12 @@ curl localhost:3000/api -X POST -d @data.json --header "Content-Type: applicatio
 > + 堆在低地址，从低地址向高地址递增
 
 
+
+#### 2021.3
+
+> 加速比 S = 1 / (1 - a + a / n)，其中 a 为并行代码比例，n为并行数
+>
+> 假设 并行代码 50%， 使用 4 线程并行，加速比 S = 8 / 5
 
 
 
@@ -173,8 +179,6 @@ cfssl：json格式
 openssl
 
 ```
-
-
 
 
 

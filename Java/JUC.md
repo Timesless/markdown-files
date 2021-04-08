@@ -1,18 +1,16 @@
 
 
-## JUC - 2020
+## AQS
 
-### JUC - 原理
-
-> JUC并发包的基石 - AQS（AbstractQueuedSynchronizer）
+> JUC 基石 - AQS（AbstractQueuedSynchronizer，抽象队列同步器）
 >
 > **==AQS = state + CLH双向队列==**
 >
-> **state状态位，0表示锁未被获取（当前线程可直接获取），大于0根据不同子类定义有不同的表示**
+> **state 状态位，0 表示锁未被获取（当前线程可直接获取），大于 0 根据不同子类定义有不同的表示**
 
 
 
-#### AQS核心API
+### AQS 核心 API
 
 ![image-20201024135812212](assets/image-20201024135812212.png)
 
@@ -29,7 +27,7 @@ boolean acquireQueued(addWaiter(Node.EXECLUSIVE), arg);
 
 
 
-#### ==AQS - acuqire()==
+### AQS - acuqire()
 
 > 假设ABC三个线程，A先获取锁（令A在整个流程期间都未释放锁），BC依次执行，那么流程代码如下，流程图如下
 >
@@ -222,11 +220,11 @@ abstract class AbstractQueuedSynchronizer {
 
 
 
-#### ==AQS - release()==
+### AQS - release()
 
-> ABC线程，此时A线程调用unlock（unlock会调用AQS的release）
+> ABC 线程，此时 A 线程调用 unlock()（unlock会调用AQS的release）
 >
-> tryRelease()需要子类提供实现，这里选择ReentrantLock的实现
+> tryRelease() 需要子类提供实现，这里选择 ReentrantLock 的实现
 
 ``` java
 public final boolean release(int arg) {
@@ -295,9 +293,7 @@ private void unparkSuccessor(Node node) {
 
 
 
-
-
-#### ReentrantLock来解析AQS
+### 以 ReentrantLock 解析 AQS
 
 > 理念必有实现，ReentrantLock就是AQS框架理论的一个具体实现
 >
@@ -325,7 +321,17 @@ private void unparkSuccessor(Node node) {
 
 
 
-### JUC - API
+
+
+## java.util.concurrent
+
++ 并发队列
+
+  （ConcurrentHashMap，CopyOnWriteArraySet）
+
++ 执行器（ExecutorService）
+
++ 调度器（SecheduledExecutorService）
 
 > 高内聚下线程操作资源类（实例变量 + 实例方法）
 >
@@ -335,30 +341,19 @@ private void unparkSuccessor(Node node) {
 
 
 
-#### JUC包
+###  Synchronized 与 Lock 区别
 
-+ `java.util.concurrent`
+####  Synchronized 三种方式
 
-各种并发队列（ConcurrentHashMap，CopyOnWriteArraySet），执行器（ExecutorService），调度器（SecheduledExecutorService）
-
-+ `java.util.concurrent.atomic`
-
-各种原子类型，如AtomicInteger，LongAdder
-
-+ `java.util.concurrent.locks`
-
-AQS及其子类实现等（AbstractQueuedSynchronizer，ReentrantLock，LockSupport工具类）
-
-
-
-####  Synchronized & Lock
-
-Synchronized三种使用方式
++ synchronized(obj)「锁 obj 所有同步方法」
++ synchronized(A.class)「锁 `Class<Test>`」
++ synchronized void A()「锁 this 所有同步方法」
 
 ``` java
 // 资源类，高内聚提供sale()
 private int number = 30;
 private Object obj = new Object();
+
 // 对象锁，this的所有同步方法
 1.1 private synchronized void sale() { }
 // 对象锁，obj的所有同步方法
@@ -369,7 +364,9 @@ private Object obj = new Object();
 3. synchronized static void test() { }
 ```
 
-Lock基本使用
+
+
+#### Lock 基本使用
 
 ``` java
 lock.lock();
@@ -382,17 +379,26 @@ try {
 
 
 
-其它对比
+#### 对比
 
-| synchronized块内 | Condition c = lock.newCondition() |
-| :--------------: | :-------------------------------: |
-|      wait()      |              await()              |
-|     notify()     |             signal()              |
-|   notifyAll()    |            signalAll()            |
+|              synchronized              | Condition c = lock.newCondition() |
+| :------------------------------------: | :-------------------------------: |
+|                 wait()                 |              await()              |
+|                notify()                |             signal()              |
+|              notifyAll()               |            signalAll()            |
+|                                        |                                   |
+|                 关键字                 |                API                |
+| monitorenter, monitorexit, monitorexit |                AQS                |
+|             不需要手动释放             |           lock.unlock()           |
+|                不可中断                |              可中断               |
+|             notify() 随机              |           准确 signal()           |
+|                 非公平                 |           公平 + 非公平           |
 
 
 
-#### Callable
+
+
+### Callable
 
 `new Thread(Runnable target, String name)`
 
@@ -416,7 +422,7 @@ RunnableFuture接口的实现类： FutureTask，那么也就是Runnable接口�
 
 
 
-#### BlockingQueue
+### BlockingQueue
 
 | 方法 |   异常    |  特殊值  |    阻塞    |         超时阻塞         |
 | :--: | :-------: | :------: | :--------: | :----------------------: |
@@ -424,34 +430,35 @@ RunnableFuture接口的实现类： FutureTask，那么也就是Runnable接口�
 | 删除 | remove()  |  poll()  | ==take()== |   poll(long, TimeUnit)   |
 | 查看 | element() |  peek()  |    null    |           null           |
 
-
-
 阻塞队列的实现类
 
-+ `ArrayBlockingQueue`数组实现的有界阻塞队列
-+ `LinkedBlockingQueue`链表实现的有界（默认为Integer.MAX_VALUE）阻塞队列
-+ `PriorityBlockingQueue`支持优先级排序的无界阻塞队列
-+ `DelayQueue`支持延时获取元素的无界阻塞队列，内部以PriorityQueue实现
-+ `SynchronousQueue`单个元素的有界阻塞队列（==容量为0，每个插入必须等待另一个线程删除，反之亦然==）
-+ `LinkedBlockingDeque`链表实现的双端阻塞队列（容量默认Integer.MAX_VALUE）
+| class               | 描述                                                         |
+| ------------------- | ------------------------------------------------------------ |
+| ArrayBlockingQueue  | 有界阻塞队列，数组实现，无法扩容                             |
+| LinkedBlockingQueue | 无界阻塞队列，链表实现，界限 0X7fffffff                      |
+| LinkedTransferQueue | 无界阻塞队列，链表实现，界限 0X7fffffff，生产者会一直阻塞阻塞直到添加的元素被某一个消费者所消费「完成一次传输」 |
+| LinkedBlockingDeque | 无界阻塞双端队列，链表实现                                   |
+| SynchronousQueue    | 不存储元素的阻塞队列，容量为 0，每个添加必须等待另一个线程 take |
+| PriorityQueue       | 带优先级的无界阻塞队列，数组实现，可以扩容，界限 0x7fffffff - 8 |
+| DelayQueue          | 带优先级的无界延迟阻塞队列，链表实现                         |
 
 
 
 `TransferQueue extends BlockingQueue`
 
-==生产者会一直阻塞直到所添加到队列的元素被某一个消费者所消费（不仅仅是添加到队列里就完事）==
+==生产者会一直阻塞直到添加到队列的元素被某一个消费者所消费（不仅仅是添加到队列里就完事）==
 
-+ `LinkedTranferQueue`是LinkedBlockingQueue & SynchronousQueue的组合
++ `LinkedTranferQueue` 是 LinkedBlockingQueue & SynchronousQueue 的组合
 
-put()线程，首先查看head是否是take()，如果是直接交出数据，否则追加到队列，立刻返回
+put() 线程，首先查看 head 是否是 take()，如果是直接交出数据，否则追加到队列，立刻返回
 
-take()线程，首先查看head是否是put()，如果是直接拿走数据，如果不是追加到tail，并阻塞
+take() 线程，首先查看 head 是否是 put()，如果是直接拿走数据，如果不是追加到tail，并阻塞
 
 
 
-**LinkedTranferQueue**
+#### LinkedTranferQueue
 
-是SynchronousQueue，ConcurrentLinkedQueue，LinkedBlockingQueue的超集，且提供了无锁CAS实现
+**LinkedTransferQueue 是 SynchronousQueue，ConcurrentLinkedQueue，LinkedBlockingQueue的超集，提供无锁CAS实现**
 
 ``` java
 /**
@@ -524,15 +531,13 @@ private E xfer(E e, boolean haveData, int how, long nanos) {
 
 
 
-#### Executor
+### Executor
 
-==Executor提供对Runnable支持==
+==Executor 提供对 Runnable 支持。ExecutroService 同时提供 Runnable，Callable 支持==
 
-==ExecutroService同时提供Runnable，Callable支持==
+![1616238866273](assets/1616238866273.png)
 
-
-
-继承结构：
+结构：
 
 Interface Executor
 
@@ -540,7 +545,7 @@ Interface Executor
     + class AbstractExecutorService
         + **class ThreadPoolExecutor**
     + Interface ScheduledExecutorService
-        + SecheduledThreadPoolExecutor
+        + class SecheduledThreadPoolExecutor
 
 
 
@@ -553,22 +558,44 @@ public ThreadPoolExecutor(int corePoolSize,
                           TimeUnit unit,
                           // 工作队列，被提交但未被执行的任务
                           BlockingQueue<Runnable>() workQueue,
-                          // 线程工厂，默认即可
+                          // 线程工厂
                           ThreadFactory threadFactory,
                           // 拒绝策略，工作队列满且工作线程 >= maximumPoolSize
                           RejectedExecutionHandler handler);
 ```
 
+##### 线程工厂与拒绝策略
 
+> **任务数达到 core + workQueue.size() 时线程池将扩容，从core 过渡到 max 数量**
+>
+> **当任务数达到 maximum + workQueue.size() 时触发拒绝策略**
 
-##### 拒绝策略
+拒绝策略：
 
-当任务数达到maximum + workQueue.size()时触发拒绝策略
-
-+ 默认抛出RejectedExecutionException -> new ThreadExecutor.AbortPolicy();
++ 默认抛出 RejectedExecutionException -> new ThreadExecutor.AbortPolicy();
 + 将某些任务回退给调用者（main） -> **CallerRunsPolicy**
 + 丢弃 -> **discardPolicy**
 + 丢弃等待最长的任务 -> **discardOldestPolicy**
+
+``` java
+// 线程工厂
+@FunctionalInterface
+public interface ThreadFactory {
+  Thread newThread(Runnbale r);
+}
+
+// 拒绝策略
+ThreadPoolExecutor.AbortPolicy policy = new ThreadPoolExecutor.AbortPolicy();
+new ThreadPoolExecutor.CallerRunsPolicy();
+new ThreadPoolExecutor.discardPolicy();
+new ThreadPoolExecutor.discardOldestPolicy();
+
+AtomicInteger threadPrefix = new AtomicInteger();
+ThreadFactory factory = r -> {
+  Thread t = new Thread(r, "== " + threadPrefix.getAndIncrement());
+  return t;
+};
+```
 
 
 
@@ -581,7 +608,21 @@ static ExexutorService newFixedThreadPool(int nThreads) {
                                   // 无参构造，容量为Integer.MAX_VALUE
                                  new LinkedBlockingQueue<Runnable>());
 }
+
+Executors.newSingleThreadExecutor();
+Executors.newCachedThreadPool();
 ```
+
+
+
+##### 核数设置
+
++ I/O 密集
+  1. NCPU x 2
+  2. NCPU / (1 - 阻塞系数)，比如：阻塞系数 0.8，核数 8，NCPU = 8 / (1 - 0.8) = 40
++ CPU 密集「core = NCPU + 1」
+
+
 
 
 
@@ -615,6 +656,16 @@ future.get() / future.join()
 ```
 
 
+
+## j.u.c.locks
+
+AQS及其子类实现等（AbstractQueuedSynchronizer，ReentrantLock，LockSupport工具类）
+
+
+
+## j.u.c.atomic
+
+各种原子类型，如AtomicInteger，LongAdder
 
 
 

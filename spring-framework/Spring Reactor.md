@@ -1735,7 +1735,30 @@ parallel-2 -> 2
 
 #### 6.6 替换 Schedulers
 
- Reactor Core 内置许多 `Scheduler` 的具体实现。 你可以用形如 `new*` 的工厂方法来创建调度器，每一种调度器都有一个单例对象，你可以使用单例工厂方法 （比如 `Schedulers.elastic()` 而不是 `Schedulers.newElastic()`）来获取它。 
+ Reactor Core 内置许多 `Scheduler` 的具体实现。 你可以用形如 `new*` 的工厂方法来创建调度器，每一种调度器都有一个单例对象，**你可以使用单例工厂方法 （比如 `Schedulers.elastic()` 而不是 `Schedulers.newElastic()`）来获取它。** 
+
+
+
+``` java
+Schedulers.elastic();
+Schedulers.paralle();
+Schedulers.boundedElastic();
+Schedulers.single();
+```
+
+> 当你不明确指定调度器的时候，那些需要调度器的操作符会使用这些默认的单例调度器
+>
+> 例如：
+>
+> `Flux#delayElements(Duration)` 使用的是 `Schedulers.parallel()` 调度器对象
+>
+> 你也可以选择对已有的调度器进行简单的包装，比如：统计每个被调度任务执行时常
+
++ 统一的更换所有添加功能后的调度器
+
+**`Schedulers.Factory`** 类来改变默认的调度器
+
+`Schedulers.setFactory(factory)`
 
 
 
@@ -1753,17 +1776,672 @@ Reactor 的可配置的应用于多种场合的回调，他们在 Hooks 类中�
 
 ##### 6.7.1 丢弃事件的 Hooks
 
+当生成源的操作符不遵循响应式规范的时候，Dropping hooks（处理丢弃事件的 hooks）会被调用，这种类型的错误是出于正常的执行机制之外的（也就是说不能通过 onError 传播）
+
+典型的栗子是：
+
+一个发布者在被调用 onComplete 之后仍然可以调用 onNext 操作符，这种情况 onNext 的值会被丢弃，如果有其它多余的 onError 信号亦是如此。
+
+相应的 hook：**onNextDropped，onErrorDropped** 可提供一个全局的 Consumer，以便能够在被丢弃的时候进行处理，例如：你可以用它对丢弃事件记录日志，或资源清理
+
+
+
+##### 6.7.2 内部错误 hook
+
+如果操作符在执行其 onNext / onError / onComplete 方法的时候抛出异常，那么 **onOperatorError** 这个钩子将被调用。
+
+这个 hook 处于正常路径，一个典型的栗子是：map 操作产生 RuntimeException，这时候还会执行到 onError
+
+首先，它将被传递给 onOperatorError，利用这个 hook 可以检查错误，或者可以改变异常，或者记录日志...
+
+ 默认的 hook 可以使用 `Hooks.resetOnOperatorError()` 方法重置 
+
+
+
+##### 6.7.3 组装 Hooks
+
+组装「assembly」hooks 关联了操作符的生命周期，它们会在一个操作链被组装起来的时候（实例化时）被调用。每一个新的操作符组装到操作链时，**onEachOperator，onLastOperator** 
 
 
 
 
 
+##### 6.7.4 预置 hooks
+
+> **Hooks 工具类还提供了一些内建「built-in」的 hooks**
+
++ onNextDroppedFail()： `onNextDropped` 通常会抛出 `Exceptions.failWithCancel()` 异常。 现在它默认还会以 DEBUG 级别对被丢弃的值记录日志。如果想回到原来的只是抛出异常的方式，使用 `onNextDroppedFail()`。 
+
++ onOperatorDebug()：  这个方法会激活 debug mode。 
 
 
 
+#### 6.8 Context
+
+**==当从命令式编程风格切换到响应式编程风格的时候，一个最大的挑战就是线程处理==**
+
+**在响应式编程中，一个线程「Thread」可被用于处理多个同时运行的异步序列（实际上是非阻塞），执行过程也经常从一个线程切换到另一个线程**
+
+这样的情况，对开发者来说，如果依赖线程模型中相对“稳定”的特性——比如 `ThreadLocal` ，它会让你将数据绑定到一个线程上，这在响应式编程环境中使用就会很困难（因为执行过程中可能会切换线程）
+
+通常对 ThreadLocal 的替代方案是：
+
++ **Tuple**
+
+**==将环境相关的数据 C，同业务数据 T 一起置于序列中，例如：使用`Tuple2<T, C>` 。但这种方案不是很好，它会在方法和反省中暴露环境数据信息==**
+
++ **Context**
+
+Reactor 引入一个类似于 ThreadLocal 的高级功能：Context，它作用于一个 Flux / Mono 上，而不是线程
+
+``` java
+// 读写 Context 的栗子
+String key = "message";
+Mono<String> mono = Mono.just("Hello")
+  .flatMap(s -> Mono.subscriberContext().map(ctx -> s + " " + ctx.get(key)))
+  .subscriberContext(ctx -> ctx.put(key, "World"));
+
+StepVerifier.create(r)
+  .exceptNext("hello world")
+  .verifyComplete();
+
+```
+
+>  这是一个主要面向库开发人员的高级功能。这需要开发者对 `Subscription` 的生命周期 充分理解，并且明白它主要用于 subscription 相关的库。 
 
 
 
+##### 6.8.1 Context API
+
+> Context 是类似于 Map 的接口：它存储 k - v 对
+>
+> + k v 都是 Object 类型
+> + Context **不可变「immutable」**
+> + put(k, v) 来存储一个键值对，返回一个新的 Context 对象，也可以使用 putAll(Context) 合并
+> + hasKey(k) 检查一个 key 是否存在
+> + getOrDefault(k, T defaultVal) 
+> + getOrEmpty(k) 来得到一个 `Optional<T>`，Context 会藏尸将值转换为 T
+> + delete(k) 来删除 key 关联的值，并返回一个新的 Context
+
+创建 Context 也可以使用静态方法 Context.of 预先存储最多 5 个键值对
+
+也可以使用 Context.empty() 创建一个空 Context
 
 
 
+##### 6.8.2 绑定 Context 到 Flux and Writing
+
+为了使用 Context，它必须绑定到一个序列，并且链上的每个操作符都可以访问它
+
+**实际上，一个 Context 是绑定到每一个链中的 Subscriber 上的**，它使用 Subscription 传播机制来让自己对每一个操作符都可见（从最后一个 subscribe 沿操作链向上）
+
+**为了填充 Context（只能在订阅时填充），你需要使用 `subscriberContext` 操作符**
+
+`subscriberContext(Context)` 会将你提供的 Context 与来自下游的（Context 是从下游向上游传播）的 Context 合并，这是通过 `Context putAll(Context)` 实现的，最后生成一个新的 Context 給上游
+
+>  你也可以用更高级的 `subscriberContext(Function)`。它接受来自下游的`Context`，然后你可以根据需要添加或删除值，然后返回新的 `Context`。 
+
+
+
+##### 6.8.3 读取 Context
+
+读取 Context 数据同样重要，多数时候添加到 Context 是用户的责任，但利用数据是库的责任，因为库通常是客户代码的上游。
+
+使用 `Mono.subscriberContext()` 读取数据
+
+
+
+##### 6.8.4 栗子
+
+本例是为了让你对如何使用 Context 有个更好的理解
+
+``` java
+String key = "message";
+Mono<String> r = Mono.just("Hello")
+  .subscriberContext(ctx -> ctx.put(key, "World")) 
+  .flatMap( s -> Mono.subscriberContext()
+           .map( ctx -> s + " " + ctx.getOrDefault(key, "Stranger")));  
+StepVerifier.create(r)
+  .expectNext("Hello Stranger") 
+  .verifyComplete();
+
+Mono<String> r = Mono.subscriberContext() 
+  .map( ctx -> ctx.put(key, "Hello")) 
+  .flatMap( ctx -> Mono.subscriberContext()) 
+  .map( ctx -> ctx.getOrDefault(key,"Default")); 
+StepVerifier.create(r)
+  .expectNext("Default") 
+  .verifyComplete();
+
+Mono<String> r = Mono.just("Hello")
+  .flatMap( s -> Mono.subscriberContext().map( ctx -> s + " " + ctx.get(key)))
+  .subscriberContext(ctx -> ctx.put(key, "Reactor")) 
+  .subscriberContext(ctx -> ctx.put(key, "World")); 
+StepVerifier.create(r)
+  .expectNext("Hello Reactor") 
+  .verifyComplete();
+
+Mono<String> r = Mono.just("Hello")
+  .flatMap( s -> Mono.subscriberContext().map( ctx -> s + " " + ctx.get(key))) 
+  .subscriberContext(ctx -> ctx.put(key, "Reactor")) 
+  .flatMap( s -> Mono.subscriberContext().map( ctx -> s + " " + ctx.get(key))) 
+  .subscriberContext(ctx -> ctx.put(key, "World")); 
+StepVerifier.create(r)
+  .expectNext("Hello Reactor World") 
+  .verifyComplete();
+```
+
+
+
+##### 6.8.5 完整的栗子
+
+
+
+``` java
+// 用户调用
+doPut("www.example.com", Mono.just("Walter"));
+
+// 为了传播一个关联ID，应该这样调用
+doPut("www.example.com", Mono.just("Walter"))
+        .subscriberContext(Context.of(HTTP_CORRELATION_ID, "2-j3r9afaf92j-afkaf"));
+
+
+// 以下演示了从库的角度由 context 读取值的模拟代码
+static final String HTTP_CORRELATION_ID = "reactive.http.library.correlationId";
+
+Mono<Tuple2<Integer, String>> doPut(String url, Mono<String> data) {
+  Mono<Tuple2<String, Optional<Object>>> dataAndContext =
+    data.zipWith(Mono.subscriberContext() 
+                 .map(c -> c.getOrEmpty(HTTP_CORRELATION_ID))); 
+
+  return dataAndContext.<String>handle((dac, sink) -> {
+      if (dac.getT2().isPresent()) { 
+        sink.next("PUT <" + dac.getT1() + "> sent to " + url + " with header X-Correlation-ID = " + dac.getT2().get());
+      }
+      else {
+        sink.next("PUT <" + dac.getT1() + "> sent to " + url);
+      }
+      sink.complete();
+    })
+    .map(msg -> Tuples.of(200, msg));
+}
+```
+
+
+
+### 7. Appendix A
+
+>  TIP：在这一节，如果一个操作符是专属于 `Flux` 或 `Mono` 的，那么会给它注明前缀。 公共的操作符没有前缀。如果一个具体的用例涉及多个操作符的组合，这里以方法调用的方式展现， 会以一个点（.）开头，并将参数置于圆括号内，比如： `.methodCall(parameter)`。 
+
++ 创建一个新序列
++ 对序列进行转换
++ 过滤序列
++ “窥视（只读）序列”
++ 错误处理
++ 基于时间的操作
++ 拆分 Flux
++ 回到同步的世界
+
+
+
+#### A.1 创建序列
+
+- 发出一个 `T`，我已经有了：`just`
+  - …基于一个 `Optional`：`Mono#justOrEmpty(Optional)`
+  - …基于一个可能为 `null` 的 T：`Mono#justOrEmpty(T)`
+- 发出一个 `T`，且还是由 `just` 方法返回
+  - …但是“懒”创建的：使用 `Mono#fromSupplier` 或用 `defer` 包装 `just`
+- 发出许多 `T`，这些元素我可以明确列举出来：`Flux#just(T...)`
+- 基于迭代数据结构:
+  - 一个数组：`Flux#fromArray`
+  - 一个集合或 iterable：`Flux#fromIterable`
+  - 一个 Integer 的 range：`Flux#range`
+  - 一个 `Stream` 提供给每一个订阅：`Flux#fromStream(Supplier)`
+- 基于一个参数值给出的源：
+  - 一个 `Supplier`：`Mono#fromSupplier`
+  - 一个任务：`Mono#fromCallable`，`Mono#fromRunnable`
+  - 一个 `CompletableFuture`：`Mono#fromFuture`
+- 直接完成：`empty`
+- 立即生成错误：`error`
+  - …但是“懒”的方式生成 `Throwable`：`error(Supplier)`
+- 什么都不做：`never`
+- 订阅时才决定：`defer`
+- 依赖一个可回收的资源：`using`
+- 可编程地生成事件（可以使用状态）:
+  - 同步且逐个的：`Flux#generate`
+  - 异步（也可同步）的，每次尽可能多发出元素：`Flux#create` （`Mono#create` 也是异步的，只不过只能发一个）
+
+
+
+#### 		A.2 序列转化
+
+- 我想转化一个序列：
+  - 1对1地转化（比如字符串转化为它的长度）：`map`
+    - …类型转化：`cast`
+    - …为了获得每个元素的序号：`Flux#index`
+  - 1对n地转化（如字符串转化为一串字符）：`flatMap` + 使用一个工厂方法
+  - 1对n地转化可自定义转化方法和/或状态：`handle`
+  - 对每一个元素执行一个异步操作（如对 url 执行 http 请求）：`flatMap` + 一个异步的返回类型为 `Publisher` 的方法
+    - …忽略一些数据：在 flatMap lambda 中根据条件返回一个 `Mono.empty()`
+    - …保留原来的序列顺序：`Flux#flatMapSequential`（对每个元素的异步任务会立即执行，但会将结果按照原序列顺序排序）
+    - …当 Mono 元素的异步任务会返回多个元素的序列时：`Mono#flatMapMany`
+- 我想添加一些数据元素到一个现有的序列：
+  - 在开头添加：`Flux#startWith(T...)`
+  - 在最后添加：`Flux#concatWith(T...)`
+- 我想将 `Flux` 转化为集合（一下都是针对 `Flux` 的）
+  - 转化为 List：`collectList`，`collectSortedList`
+  - 转化为 Map：`collectMap`，`collectMultiMap`
+  - 转化为自定义集合：`collect`
+  - 计数：`count`
+  - reduce 算法（将上个元素的reduce结果与当前元素值作为输入执行reduce方法，如sum） `reduce`
+    - …将每次 reduce 的结果立即发出：`scan`
+  - 转化为一个 boolean 值：
+    - 对所有元素判断都为true：`all`
+    - 对至少一个元素判断为true：`any`
+    - 判断序列是否有元素（不为空）：`hasElements`
+    - 判断序列中是否有匹配的元素：`hasElement`
+- 我想合并 publishers…
+  - 按序连接：`Flux#concat` 或 `.concatWith(other)`
+    - …即使有错误，也会等所有的 publishers 连接完成：`Flux#concatDelayError`
+    - …按订阅顺序连接（这里的合并仍然可以理解成序列的连接）：`Flux#mergeSequential`
+  - 按元素发出的顺序合并（无论哪个序列的，元素先到先合并）：`Flux#merge` / `.mergeWith(other)`
+    - …元素类型会发生变化：`Flux#zip` / `Flux#zipWith`
+  - 将元素组合：
+    - 2个 Monos 组成1个 `Tuple2`：`Mono#zipWith`
+    - n个 Monos 的元素都发出来后组成一个 Tuple：`Mono#zip`
+  - 在终止信号出现时“采取行动”：
+    - 在 Mono 终止时转换为一个 `Mono`：`Mono#and`
+    - 当 n 个 Mono 都终止时返回 `Mono`：`Mono#when`
+    - 返回一个存放组合数据的类型，对于被合并的多个序列：
+      - 每个序列都发出一个元素时：`Flux#zip`
+      - 任何一个序列发出元素时：`Flux#combineLatest`
+  - 只取各个序列的第一个元素：`Flux#first`，`Mono#first`，`mono.or (otherMono).or(thirdMono)`，`flux.or(otherFlux).or(thirdFlux)
+  - 由一个序列触发（类似于 `flatMap`，不过“喜新厌旧”）：`switchMap`
+  - 由每个新序列开始时触发（也是“喜新厌旧”风格）：`switchOnNext`
+- 我想重复一个序列：`repeat`
+  - …但是以一定的间隔重复：`Flux.interval(duration).flatMap(tick -> myExistingPublisher)`
+- 我有一个空序列，但是…
+  - 我想要一个缺省值来代替：`defaultIfEmpty`
+  - 我想要一个缺省的序列来代替：`switchIfEmpty`
+- 我有一个序列，但是我对序列的元素值不感兴趣：`ignoreElements`
+  - …并且我希望用 `Mono` 来表示序列已经结束：`then`
+  - …并且我想在序列结束后等待另一个任务完成：`thenEmpty`
+  - …并且我想在序列结束之后返回一个 `Mono`：`Mono#then(mono)`
+  - …并且我想在序列结束之后返回一个值：`Mono#thenReturn(T)`
+  - …并且我想在序列结束之后返回一个 `Flux`：`thenMany`
+- 我有一个 Mono 但我想延迟完成…
+  - …当有1个或N个其他 publishers 都发出（或结束）时才完成：`Mono#delayUntilOther`
+    - …使用一个函数式来定义如何获取“其他 publisher”：`Mono#delayUntil(Function)`
+- 我想基于一个递归的生成序列的规则扩展每一个元素，然后合并为一个序列发出：
+  - …广度优先：`expand(Function)`
+  - …深度优先：`expandDeep(Function)`
+
+
+
+#### A.3. 只读序列
+
+- 在不对序列造成改变的情况下，我想：
+  - 得到通知或执行一些操作：
+    - 发出元素：`doOnNext`
+    - 序列完成：`Flux#doOnComplete`，`Mono#doOnSuccess`
+    - 因错误终止：`doOnError`
+    - 取消：`doOnCancel`
+    - 订阅时：`doOnSubscribe`
+    - 请求时：`doOnRequest`
+    - 完成或错误终止：`doOnTerminate`（Mono的方法可能包含有结果）
+      - 但是在终止信号向下游传递 **之后** ：`doAfterTerminate`
+    - 所有类型的信号（`Signal`）：`Flux#doOnEach`
+    - 所有结束的情况（完成complete、错误error、取消cancel）：`doFinally`
+  - 记录日志：`log`
+- 我想知道所有的事件:
+  - 每一个事件都体现为一个 `single` 对象：
+    - 执行 callback：`doOnEach`
+    - 每个元素转化为 `single` 对象：`materialize`
+      - …在转化回元素：`dematerialize`
+  - 转化为一行日志：`log`
+
+
+
+#### A.4. 过滤序列
+
+- 我想过滤一个序列
+  - 基于给定的判断条件：`filter`
+    - …异步地进行判断：`filterWhen`
+  - 仅限于指定类型的对象：`ofType`
+  - 忽略所有元素：`ignoreElements`
+  - 去重:
+    - 对于整个序列：`Flux#distinct`
+    - 去掉连续重复的元素：`Flux#distinctUntilChanged`
+- 我只想要一部分序列：
+  - 只要 N 个元素：
+    - 从序列的第一个元素开始算：`Flux#take(long)`
+      - …取一段时间内发出的元素：`Flux#take(Duration)`
+      - …只取第一个元素放到 `Mono` 中返回：`Flux#next()`
+      - …使用 `request(N)` 而不是取消：`Flux#limitRequest(long)`
+    - 从序列的最后一个元素倒数：`Flux#takeLast`
+    - 直到满足某个条件（包含）：`Flux#takeUntil`（基于判断条件），`Flux#takeUntilOther`（基于对 publisher 的比较）
+    - 直到满足某个条件（不包含）：`Flux#takeWhile`
+  - 最多只取 1 个元素：
+    - 给定序号：`Flux#elementAt`
+    - 最后一个：`.takeLast(1)`
+      - …如果为序列空则发出错误信号：`Flux#last()`
+      - …如果序列为空则返回默认值：`Flux#last(T)`
+  - 跳过一些元素：
+    - 从序列的第一个元素开始跳过：`Flux#skip(long)`
+      - …跳过一段时间内发出的元素：`Flux#skip(Duration)`
+    - 跳过最后的 n 个元素：`Flux#skipLast`
+    - 直到满足某个条件（包含）：`Flux#skipUntil`（基于判断条件），`Flux#skipUntilOther` （基于对 publisher 的比较）
+    - 直到满足某个条件（不包含）：`Flux#skipWhile`
+  - 采样：
+    - 给定采样周期：`Flux#sample(Duration)`
+      - 取采样周期里的第一个元素而不是最后一个：`sampleFirst`
+    - 基于另一个 publisher：`Flux#sample(Publisher)`
+    - 基于 publisher“超时”：`Flux#sampleTimeout` （每一个元素会触发一个 publisher，如果这个 publisher 不被下一个元素触发的 publisher 覆盖就发出这个元素）
+- 我只想要一个元素（如果多于一个就返回错误）…
+  - 如果序列为空，发出错误信号：`Flux#single()`
+  - 如果序列为空，发出一个缺省值：`Flux#single(T)`
+  - 如果序列为空就返回一个空序列：`Flux#singleOrEmpty`
+
+
+
+#### A.5. 错误处理
+
+- 我想创建一个错误序列：`error`…
+  - …替换一个完成的 `Flux`：`.concat(Flux.error(e))`
+  - …替换一个完成的 `Mono`：`.then(Mono.error(e))`
+  - …如果元素超时未发出：`timeout`
+  - …“懒”创建：`error(Supplier)`
+- 我想要类似 try/catch 的表达方式：
+  - 抛出异常：`error`
+  - 捕获异常：
+    - 然后返回缺省值：`onErrorReturn`
+    - 然后返回一个 `Flux` 或 `Mono`：`onErrorResume`
+    - 包装异常后再抛出：`.onErrorMap(t -> new RuntimeException(t))`
+  - finally 代码块：`doFinally`
+  - Java 7 之后的 try-with-resources 写法：`using` 工厂方法
+- 我想从错误中恢复…
+  - 返回一个缺省的：
+    - 的值：`onErrorReturn`
+    - `Publisher`：`Flux#onErrorResume` 和 `Mono#onErrorResume`
+  - 重试：`retry`
+    - …由一个用于伴随 Flux 触发：`retryWhen`
+- 我想处理回压错误（向上游发出“MAX”的 request，如果下游的 request 比较少，则应用策略）…
+  - 抛出 `IllegalStateException`：`Flux#onBackpressureError`
+  - 丢弃策略：`Flux#onBackpressureDrop`
+    - …但是不丢弃最后一个元素：`Flux#onBackpressureLatest`
+  - 缓存策略（有限或无限）：`Flux#onBackpressureBuffer`
+    - …当有限的缓存空间用满则应用给定策略：`Flux#onBackpressureBuffer` 带有策略 `BufferOverflowStrategy`
+
+
+
+#### A.6. 基于时间的操作
+
+- 我想将元素转换为带有时间信息的 `Tuple2`…
+  - 从订阅时开始：`elapsed`
+  - 记录时间戳：`timestamp`
+- 如果元素间延迟过长则中止序列：`timeout`
+- 以固定的周期发出元素：`Flux#interval`
+- 在一个给定的延迟后发出 `0`：static `Mono.delay`.
+- 我想引入延迟：
+  - 对每一个元素：`Mono#delayElement`，`Flux#delayElements`
+  - 延迟订阅：`delaySubscription`
+
+
+
+#### A.7. 拆分 `Flux`
+
+- 我想将一个 `Flux` 拆分为一个 `Flux>`：
+  - 以个数为界：`window(int)`
+    - …会出现重叠或丢弃的情况：`window(int, int)`
+  - 以时间为界：`window(Duration)`
+    - …会出现重叠或丢弃的情况：`window(Duration, Duration)`
+  - 以个数或时间为界：`windowTimeout(int, Duration)`
+  - 基于对元素的判断条件：`windowUntil`
+    - …触发判断条件的元素会分到下一波（`cutBefore` 变量）：`.windowUntil(predicate, true)`
+    - …满足条件的元素在一波，直到不满足条件的元素发出开始下一波：`windowWhile` （不满足条件的元素会被丢弃）
+  - 通过另一个 Publisher 的每一个 onNext 信号来拆分序列：`window(Publisher)`，`windowWhen`
+- 我想将一个 `Flux` 的元素拆分到集合…
+  - 拆分为一个一个的 `List`:
+    - 以个数为界：`buffer(int)`
+      - …会出现重叠或丢弃的情况：`buffer(int, int)`
+    - 以时间为界：`buffer(Duration)`
+      - …会出现重叠或丢弃的情况：`buffer(Duration, Duration)`
+    - 以个数或时间为界：`bufferTimeout(int, Duration)`
+    - 基于对元素的判断条件：`bufferUntil(Predicate)`
+      - …触发判断条件的元素会分到下一个buffer：`.bufferUntil(predicate, true)`
+      - …满足条件的元素在一个buffer，直到不满足条件的元素发出开始下一buffer：`bufferWhile(Predicate)`
+    - 通过另一个 Publisher 的每一个 onNext 信号来拆分序列：`buffer(Publisher)`，`bufferWhen`
+  - 拆分到指定类型的 "collection"：`buffer(int, Supplier)`
+- 我想将 `Flux` 中具有共同特征的元素分组到子 Flux：`groupBy(Function)` TIP：注意返回值是 `Flux>`，每一个 `GroupedFlux` 具有相同的 key 值 `K`，可以通过 `key()` 方法获取。
+
+
+
+#### A.8. 回到同步的世界
+
+- 我有一个 `Flux`，我想：
+  - 在拿到第一个元素前阻塞：`Flux#blockFirst`
+    - …并给出超时时限：`Flux#blockFirst(Duration)`
+  - 在拿到最后一个元素前阻塞（如果序列为空则返回 null）：`Flux#blockLast`
+    - …并给出超时时限：`Flux#blockLast(Duration)`
+  - 同步地转换为 `Iterable`：`Flux#toIterable`
+  - 同步地转换为 Java 8 `Stream`：`Flux#toStream`
+- 我有一个 `Mono`，我想：
+  - 在拿到元素前阻塞：`Mono#block`
+    - …并给出超时时限：`Mono#block(Duration)`
+  - 转换为 `CompletableFuture`：`Mono#toFuture`
+
+
+
+### 8. Appendix B
+
+
+
+#### B.1 如何包装一个同步阻塞的调用？
+
+很多时候，信息源是同步阻塞的，在 Reactor 中我们可以这样处理：
+
+``` JAVA
+Mono blockingWrapper = Mono.fromCallable(() -> return synchroRpcCall());
+blockingWrapper.subscribeOn(Schedulers.elastic());
+```
+
+> 1. 使用 fromCallable 生成一个 Mono
+>
+> 2. 返回同步、阻塞的资源
+>
+> 3. 使用 Schedulers.elastic() 确保每一个订阅都运行在一个专门的线程上
+>
+>    **Schedulers.elastic() 会创建一个线程来等待阻塞的调用返回，subscribeOn 并不会订阅这个 Mono，而是指定了订阅操作使用哪个调度器「Scheduler」**
+
+
+
+#### B.2. 用在 `Flux` 上的操作符好像没起作用，为啥？
+
+请确认你确实对调用 `.subscribe()` 的发布者应用了这个操作符。
+
+Reactor 的操作符是装饰器（decorators）。它们会返回一个不同的（发布者）实例， 这个实例对上游序列进行了包装并增加了一些的处理行为。所以，最推荐的方式是将操作符“串”起来。
+
+对比下边的两个例子：
+
+没有串起来（**不正确的**）
+
+```
+Flux<String> flux = Flux.just("foo", "chain");
+// 返回的是匿名的 Flux
+flux.map(secret -> secret.replaceAll(".", "*")); 
+flux.subscribe(next -> System.out.println("Received: " + next));
+```
+
+**正确的**
+
+``` java
+Flux<String> secrets = Flux
+  .just("foo", "chain")
+  .map(secret -> secret.replaceAll(".", "*"))
+  .subscribe(next -> System.out.println("Received: " + next));
+```
+
+
+
+#### B.3 Mono# zipWith / zipWhen 没有被调用
+
+``` java
+myMethod.process("a") // 这个方法返回 Mono<Void>
+  .zipWith(myMethod.process("b"), combinator) //没有被调用
+  .subscribe();
+```
+
+ 如果源 `Mono` 为空或是一个 `Mono`（`Mono` 通常用于“空”的场景）， 下边的组合操作就不会被调用。 
+
+在 zipWhen 前使用 defaultIfEmpty
+
+``` java
+myMethod.emptySequenceForKey("a") // 这个方法返回一个空的 Mono<String>
+  .defaultIfEmpty("") // 将空序列转换为包含字符串 "" 的序列
+  .zipWhen(aString -> myMethod.process("b")) // 当 "" 发出时被调用
+  .subscribe();
+```
+
+
+
+#### B.4 如何使用 retryWhen 实现 retry(3)
+
+``` java
+Flux<String> flux =
+  Flux.<String>error(new IllegalArgumentException())
+  .retryWhen(companion -> companion.zipWith(Flux.range(1, 4), 
+                      (error, index) -> { 
+                        if (index < 4) return index; 
+                        else throw Exceptions.propagate(error); 
+                      })
+            );
+```
+
+|      | 技巧一：使用 `zip` 和一个“重试个数 + 1”的 `range`。          |
+| ---- | ------------------------------------------------------------ |
+|      | `zip` 方法让你可以在对重试次数计数的同时，仍掌握着原始的错误（error）。 |
+|      | 允许三次重试，小于 4 的时候发出一个值。                      |
+|      | 为了使序列以错误结束。我们将原始异常在三次重试之后抛出。     |
+
+
+
+#### B.5. 如何使用 `retryWhen` 进行 exponential backoff？
+
+Exponential backoff 的意思是进行的多次重试之间的间隔越来越长， 从而避免对源系统造成过载，甚至宕机。基本原理是，如果源产生了一个错误， 那么已经是处于不稳定状态，可能不会立刻复原。所以，如果立刻就重试可能会产生另一个错误， 导致源更加不稳定。
+
+下面是一段实现 exponential backoff 效果的例子，每次重试的间隔都会递增 （伪代码： delay = attempt number * 100 milliseconds）：
+
+```
+Flux<String> flux =
+Flux.<String>error(new IllegalArgumentException())
+    .retryWhen(companion -> companion
+        .doOnNext(s -> System.out.println(s + " at " + LocalTime.now())) 
+        .zipWith(Flux.range(1, 4), (error, index) -> { 
+          if (index < 4) return index;
+          else throw Exceptions.propagate(error);
+        })
+        .flatMap(index -> Mono.delay(Duration.ofMillis(index * 100))) 
+        .doOnNext(s -> System.out.println("retried at " + LocalTime.now())) 
+    );
+```
+
+|      | 记录错误出现的时间；                                   |
+| ---- | ------------------------------------------------------ |
+|      | 使用 `retryWhen` + `zipWith` 的技巧实现重试3次的效果； |
+|      | 通过 `flatMap` 来实现延迟时间递增的效果；              |
+|      | 同样记录重试的时间。                                   |
+
+订阅它，输出如下：
+
+```
+java.lang.IllegalArgumentException at 18:02:29.338
+retried at 18:02:29.459 
+java.lang.IllegalArgumentException at 18:02:29.460
+retried at 18:02:29.663 
+java.lang.IllegalArgumentException at 18:02:29.663
+retried at 18:02:29.964 
+java.lang.IllegalArgumentException at 18:02:29.964
+```
+
+|      | 第一次重试延迟大约 100ms |
+| ---- | ------------------------ |
+|      | 第二次重试延迟大约 200ms |
+|      | 第三次重试延迟大约 300ms |
+
+
+
+#### B.6. How do I ensure thread affinity using `publishOn()`?
+
+如 Schedulers 所述，`publishOn()` 可以用来切换执行线程。 `publishOn` 能够影响到其之后的操作符的执行线程，直到有新的 `publishOn` 出现。 所以 `publishOn` 的位置很重要。
+
+比如下边的例子， `map()` 中的 `transform` 方法是在 `scheduler1` 的一个工作线程上执行的， 而 `doOnNext()` 中的 `processNext` 方法是在 `scheduler2` 的一个工作线程上执行的。 单线程的调度器可能用于对不同阶段的任务或不同的订阅者确保线程关联性。
+
+```java
+EmitterProcessor<Integer> processor = EmitterProcessor.create();
+processor.publishOn(scheduler1)
+  .map(i -> transform(i))
+  .publishOn(scheduler2)
+  .doOnNext(i -> processNext(i))
+  .subscribe();
+```
+
+
+
+### 9. Appendix C: Reactor-Extra
+
+`reactor-extra` 为满足 `reactor-core` 用户的更高级需求，提供了一些额外的操作符和工具。
+
+由于这是一个单独的包，使用时需要明确它的依赖：
+
+```
+dependencies {
+     compile 'io.projectreactor:reactor-core'
+     compile 'io.projectreactor.addons:reactor-extra' 
+}
+```
+
+|      | 添加 reactor-extra 的依赖。参考 获取 Reactor 了解为什么使用BOM的情况下不需要指定 version。 |
+| ---- | ------------------------------------------------------------ |
+|      |                                                              |
+
+
+
+在 Java 8 提供的函数式接口基础上，`reactor.function` 包又提供了一些支持 3 到 8 个值的 `Function`、`Predicate` 和 `Consumer`。
+
+`TupleUtils` 提供的静态方法可以方便地用于将相应的 `Tuple` 函数式接口的 lambda 转换为更简单的接口。
+
+这使得我们在使用 `Tuple` 中各成员的时候更加容易，比如：
+
+```
+.map(tuple -> {
+  String firstName = tuple.getT1();
+  String lastName = tuple.getT2();
+  String address = tuple.getT3();
+
+  return new Customer(firstName, lastName, address);
+});
+```
+
+可以用下面的方式代替：
+
+```
+.map(TupleUtils.function(Customer::new)); 
+```
+
+|      | （因为 `Customer` 的构造方法符合 `Consumer3` 的函数式接口标签） |
+| ---- | ------------------------------------------------------------ |
+|      |                                                              |
+
+
+
+T`reactor.math` 包的 `MathFlux` 提供了一些用于数学计算的操作符，如 `max`、`min`、`sumInt`、`averageDouble`…
+
+
+
+`reactor.retry` 包中有一些能够帮助实现 `Flux#repeatWhen` 和 `Flux#retryWhen` 的工具。入口点（entry points）就是 `Repeat` 和 `Retry` 接口的工厂方法。
+
+两个接口都可用作可变的构建器（mutative builder），并且相应的实现（implementing） 都可作为 `Function` 用于对应的操作符。
+
+
+
+Reactor-extra 提供了若干专用的调度器： - `ForkJoinPoolScheduler`，位于 `reactor.scheduler.forkjoin` 包； - `SwingScheduler`，位于 `reactor.swing` 包； - `SwtScheduler`，位于 `reactor.swing` 包。

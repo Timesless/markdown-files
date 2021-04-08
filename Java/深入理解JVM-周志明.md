@@ -206,53 +206,55 @@
 0xc9 jsr_w     跳转至指定32位offset位置，并将jsr_w下一条指令地址压入栈顶 
 ```
 
-> 1)操作数栈
-> 变量到操作数栈：iload,iload\_,lload,lload\_,fload,fload\_,dload,dload\_,aload,aload_
-> 操作数栈到变量：istore,istore\_,lstore,lstore\_,fstore,fstore_,dstore,dstore\_,astore,astore_
-> 常数到操作数栈：bipush,sipush,ldc,ldc_w,ldc2_w,aconst_null,iconst_ml,iconst\_,lconst\_,fconst\_,dconst_
-> 把数组装载到操作数栈：baload,caload,saload,iaload,laload,faload,daload,aaload
-> 从操作数栈存存储到数组：bastore,castore,sastore,iastore,lastore,fastore,dastore,aastore
-> 操作数栈管理：pop,pop2,dup,dup2,dup_xl,dup2_xl,dup_x2,dup2_x2,swap
-> 2)运算与转换
-> 加：iadd,ladd,fadd,dadd
-> 减：is ,ls ,fs ,ds 
-> 乘：imul,lmul,fmul,dmul
-> 除：idiv,ldiv,fdiv,ddiv
-> 余数：irem,lrem,frem,drem
-> 取负：ineg,lneg,fneg,dneg
-> 移位：ishl,lshr,iushr,lshl,lshr,lushr
-> 按位或：ior,lor
-> 按位与：iand,land
-> 按位异或：ixor,lxor
-> 类型转换：i2l,i2f,i2d,l2f,l2d,f2d(放宽数值转换)
->      i2b,i2c,i2s,l2i,f2i,f2l,d2i,d2l,d2f(缩窄数值转换)
-> 3)条件转移
-> 有条件转移：ifeq,iflt,ifle,ifne,ifgt,ifge,ifnull,ifnonnull,if_icmpeq,if_icmpene,
+> 按类别划分：
+>
+> 1. 操作数栈
+>    变量到操作数栈：iload,iload\_,lload,lload\_,fload,fload\_,dload,dload\_,aload,aload_
+>    操作数栈到变量：istore,istore\_,lstore,lstore\_,fstore,fstore_,dstore,dstore\_,astore,astore_
+>    常数到操作数栈：bipush,sipush,ldc,ldc_w,ldc2_w,aconst_null,iconst_ml,iconst\_,lconst\_,fconst\_,dconst_
+>    把数组装载到操作数栈：baload,caload,saload,iaload,laload,faload,daload,aaload
+>    从操作数栈存存储到数组：bastore,castore,sastore,iastore,lastore,fastore,dastore,aastore
+>    操作数栈管理：pop,pop2,dup,dup2,dup_xl,dup2_xl,dup_x2,dup2_x2,swap
+>
+> 2. 运算与转换
+>    加：iadd,ladd,fadd,dadd
+>    减：is ,ls ,fs ,ds 
+>    乘：imul,lmul,fmul,dmul
+>    除：idiv,ldiv,fdiv,ddiv
+>    余数：irem,lrem,frem,drem
+>    取负：ineg,lneg,fneg,dneg
+>    移位：ishl,lshr,iushr,lshl,lshr,lushr
+>    按位或：ior,lor
+>    按位与：iand,land
+>    按位异或：ixor,lxor
+>    类型转换：i2l,i2f,i2d,l2f,l2d,f2d(放宽数值转换)
+>        i2b,i2c,i2s,l2i,f2i,f2l,d2i,d2l,d2f(缩窄数值转换)
+>
+> 3. 条件转移
+>    有条件转移：ifeq,iflt,ifle,ifne,ifgt,ifge,ifnull,ifnonnull,if_icmpeq,if_icmpene,
 >       if_icmplt,if_icmpgt,if_icmple,if_icmpge,if_acmpeq,if_acmpne,lcmp,fcmpl,fcmpg,dcmpl,dcmpg
-> 复合条件转移：tableswitch,lookupswitch
-> 无条件转移：goto,goto_w,jsr,jsr_w,ret
-> 4)类与数组
-> 创建类实便：new
-> 创建新数组：newarray,anewarray,multianwarray
-> 访问类的域和类实例域：getfield,putfield,getstatic,putstatic
-> 获取数组长度：arraylength
-> 检相类实例或数组属性：instanceof,checkcast
-> 5)调度与返回加finally
-> 调度对象的实便方法：invokevirt l
-> 调用由接口实现的方法：invokeinterface
-> 调用需要特殊处理的实例方法：invokespecial
-> 调用命名类中的静态方法：invokestatic
-> 方法返回：ireturn,lreturn,freturn,dreturn,areturn,return
-> 异常：athrow
-> finally关键字的实现使用：jsr,jsr_w,ret
+>    复合条件转移：tableswitch,lookupswitch
+>    无条件转移：goto,goto_w,jsr,jsr_w,ret
+> 4. 类与数组
+>    创建类实便：new
+>    创建新数组：newarray,anewarray,multianwarray
+>    访问类的域和类实例域：getfield,putfield,getstatic,putstatic
+>    获取数组长度：arraylength
+>    检相类实例或数组属性：instanceof,checkcast
+> 5. 方法调用与异常处理
+>    调度对象的实例方法：invokevirtual
+>    调用由接口实现的方法：invokeinterface
+>    调用需要特殊处理的实例方法：invokespecial
+>    调用命名类中的静态方法：invokestatic
+>    方法返回：ireturn,lreturn,freturn,dreturn,areturn,return
+>    异常：athrow
+>    finally关键字的实现使用：jsr,jsr_w,ret
 
 
 
 
 
 ## 自动内存管理
-
-Java与C++之间有一堵由内存动态分配和垃圾收集技术所围成的高墙，墙外面的人想进去，墙里面的人却想出来。
 
 
 
@@ -274,7 +276,7 @@ Java Virtual Machine Stack线程私有，每个线程一个虚拟机栈，基本
 
 栈帧：局部变量表，操作数栈，动态链接，返回地址
 
-局部变量表，操作数栈基本单位：Slot
+局部变量表，操作数栈基本单位：Slot（4B，Long、Double 占用 2 个 slot）
 
 
 
@@ -290,7 +292,7 @@ HotSpot将虚拟机栈，本地方法栈合二为一
 
 堆：新生代（Eden，from survivor， to survivor），老年代
 
-在Eden区占1%划分线程私有分配缓冲区（Thread Local Allocation Buffer）
+在 Eden 区划分 1% 线程私有分配缓冲区（Thread Local Allocation Buffer）
 
 -Xms
 
@@ -302,7 +304,7 @@ HotSpot将虚拟机栈，本地方法栈合二为一
 
 被线程共享，存储被类加载子系统加载的类型信息，常量，静态变量，即时编译后的代码等
 
-==JDK7的HotSpot，将字符串常量池，静态变量移到堆中存储，并在JDK8更换为Metaspace实现==
+==JDK7 的 HotSpot，将字符串常量池，静态变量移到堆中存储，并在 JDK8 更换为 Metaspace 实现==
 
 + 类型信息
 
@@ -316,7 +318,7 @@ Runtime Constant Pool是方法区一部分，Class文件中常量池表存放编
 
 #### 直接内存
 
-NIO（New Input / Output），基于通道（Channel）和缓冲（Buffer）的IO抽象，使用Native函数库分配==堆外内存==，`ByteBuffer.allocateDirect(int capactity);`
+NIO（New Input / Output），基于通道（Channel）和缓冲（Buffer）的 IO 抽象，使用Native函数库分配==堆外内存==，`ByteBuffer.allocateDirect(int capactity);`
 
 ``` java
 private static final int _1MB = 1024 * 1024;
@@ -341,7 +343,7 @@ main(String[] args) {
 
 #### 2.1 对象创建
 
-==new指令，在运行时常量池中找到类的符号引用，比如"com.demo.DemoClass"检查该符号引用代表的类是否被加载，如果没有需要执行类加载过程（加载，连接（验证，准备，解析），初始化），加载完成后由JVM分配内存（指针碰撞，空闲列表；采用何种方式由垃圾收集器决定），并将分配的内存初始化0值，设置对象头。至此JVM层面对象创建完成，随后调用构造方法invokespecial（\<init>()：已经合并构造块与构造器中代码）==
+==new指令，在运行时常量池中找到类的符号引用，比如"com.demo.DemoClass"检查该符号引用代表的类是否被加载，如果没有需要执行类加载过程（加载，连接（验证，准备，解析），初始化），加载完成后由JVM分配内存（指针碰撞，空闲列表；采用何种方式由垃圾收集器决定），并将分配的内存初始化0值，设置对象头。至此JVM层面对象创建完成（new + dup），随后调用构造方法invokespecial（\<init>()：已经合并构造块与构造器中代码）==
 
 
 
@@ -355,7 +357,7 @@ main(String[] args) {
 
 ​	==TLAB：本地线程分配缓冲==
 
-​	==CAS更新内存指针==
+​	==CAS 更新内存指针==
 
 
 
@@ -378,7 +380,7 @@ main(String[] args) {
   + GC年龄
   + 锁状态标志
   + 线程持有的锁
-  + 偏向线程ID
+  + 偏向线程ID（23b）
   + 偏向时间戳
 + 类型指针：对象指向它的类型元数据的指针，JVM通过这个指针来确定该对象是哪个类的实例
 
@@ -438,7 +440,7 @@ ClassLaout.parseObject(new Object()).toPrintable();
 
 + 直接指针
 
-直接访问，需考虑如何存放类型数据地址（存放在对象头）。对象移动后需要修改reference
+直接访问，需考虑如何存放类型数据信息（存放在对象头）。对象移动后需要修改reference
 
 
 
@@ -446,7 +448,8 @@ ClassLaout.parseObject(new Object()).toPrintable();
 
 StackOverFlowError：
 
-​	1 请求栈深度操作栈允许最大深度；2 无论是由于栈帧太大还是虚拟机栈容量太小，当新的栈帧内存无法分配的时，都抛出StackOverFlowError
+	1. 请求栈深度操作栈允许最大深度
+ 	2. 无论是由于栈帧太大还是虚拟机栈容量太小，当新的栈帧内存无法分配的时，都抛出StackOverFlowError
 
 OutofMemoryError：
 
@@ -522,9 +525,9 @@ sout(str2.intern() == str2);
 
 ​	本地方法栈（栈帧中本地变量表）中引用的对象
 
-​	堆中，静态属性引用的对象
+​	**堆中静态属性引用的对象**
 
-​	方法区中，常量引用的对象 
+​	方法区中常量引用的对象 
 
 ​	基本类型对应的Class对象，常驻内存的异常对象（NPE，OOM），系统类加载器
 
@@ -532,7 +535,7 @@ sout(str2.intern() == str2);
 
 ​	JMXBean，JVMTI等
 
-除了这些固定的GC Roots，在垃圾收集时有其它对象“临时性”加入，共同构成完整GC Roots ，比如说Partial GC跨代引用
+除了这些固定的GC Roots，在垃圾收集时有其它对象“临时性”加入，共同构成完整GC Roots ，比如说Partial GC（局部 GC）跨代引用
 
 
 
@@ -596,7 +599,7 @@ PhatomReference phatomRef = new PhantomReference<>(str);
 
 混合收集（Mixed GC）：指目标是收集整个新生代以及部分老年代的垃圾收集。目前只有G1收集器会有这种行为。
 
-==整堆收集（Full GC）：收集整个Java堆和方法区的垃圾收集。==
+==整堆收集（Full GC）：收集整个Java堆和方法区。==
 
 
 
@@ -678,7 +681,7 @@ test指令就是HotSpot生成的轮询指令
 
 
 
-一个卡页的内存中通常包含不止一个对象，只要卡页内有一个（或更多）对象的字段存在着跨代指针，那就将对应卡表的数组元素的值标识为1，称为这个元素变脏（Dirty），没有则标识为0。在垃圾收集发生时，只要筛选出卡表中变脏的元素，就能轻易得出哪些卡页内存块中包含跨代指针，把它们加入GC Roots中一并扫描。
+一个卡页的内存中通常包含不止一个对象，**只要卡页内有一个（或更多）对象的字段存在着跨代指针，那就将对应卡表的数组元素的值标识为1，称为这个元素变脏（Dirty），没有则标识为0**。在垃圾收集发生时，只要筛选出卡表中变脏的元素，就能轻易得出哪些卡页内存块中包含跨代指针，把它们加入GC Roots中一并扫描。
 
 
 
@@ -686,11 +689,13 @@ test指令就是HotSpot生成的轮询指令
 
 类似于AOP切面
 
-如何在对象赋值的那一刻去更新维护卡表呢？假如是解释执行的字节码，那相对好处理，虚拟机负责每条字节码指令的执行，有充分的介入空间；但在编译执行的场景中呢？经过即时编译后的代码已经是纯粹的机器指令流了，这就必须找到一个在机器码层面的手段，把维护卡表的动作放到每一个赋值操作之中
+如何在对象赋值的那一刻去更新维护卡表呢？假如是解释执行的字节码，那相对好处理，虚拟机负责每条字节码指令的执行，有充分的介入空间；但在编译执行的场景中呢？经过即时编译后的代码已经是纯粹的机器指令流了，这就必须找到一个在机器码层面的手段，**把维护卡表的动作放到每一个赋值操作之中**
 
 
 
 在引用对象赋值时会产生一个环形（Around）通知，供程序执行额外的动作，也就是说赋值的前后都在写屏障的覆盖范畴内。在赋值前的部分的写屏障叫作写前屏障（Pre-Write Barrier），在赋值后的则叫作写后屏障（Post-Write Barrier）。HotSpot虚拟机的许多收集器中都有使用到写屏障，但直至G1收集器出现之前，其他收集器都只用到了写后屏障
+
+> 就是每个 =「赋值号」时维护卡表
 
 ``` c++
 void oop_field_store(oop* field, oop new_value) {
@@ -706,7 +711,7 @@ void oop_field_store(oop* field, oop new_value) {
 
 False Sharing
 
-伪共享是处理并发底层细节时一种经常需要考虑的问题，现代中央处理器的缓存系统中是以缓存行（CacheLine）为单位存储的，当多线程修改互相独立的变量时，如果这些变量恰好共享同一个缓存行，就会彼此影响（写回、无效化或者同步）
+伪共享是处理并发底层细节时一种经常需要考虑的问题，**现代 CPU 的缓存系统中是以缓存行（CacheLine，64B）为单位存储的**，当多线程修改互相独立的变量时，如果这些变量恰好共享同一个缓存行，就会彼此影响（写回、无效化或者同步）
 
 ==JDK8通过@sun.misc.Contented注解填充补白解决伪共享==
 
@@ -716,21 +721,38 @@ False Sharing
 
 可达性分析算法理论上要求全过程都基于一个能保障一致性的快照中才能够进行分析，这意味着必须全程冻结用户线程的运行。在根节点枚举这个步骤中，由于GC Roots相比起整个Java堆中全部的对象毕竟还算是极少数，且在各种优化技巧（如OopMap）的加持下，它带来的停顿已经是非常短暂且相对固定（不随堆容量而增长）
 
-
+> **可达性分析与用户线程并发，导致扫描后的引用又变动**
+>
+> 1. 浮动垃圾
+> 2. “对象消失”
 
 ##### 三色标记
 
-+ 白色：表示对象尚未被垃圾收集器访问过。显然在可达性分析刚刚开始的阶段，所有的对象都是白色的，若在分析结束的阶段，仍然是白色的对象，即代表不可达。
++ 白色：表示对象尚未被垃圾收集器访问过。若在分析结束的阶段，仍然是白色的对象，即代表不可达。
 
-+ 黑色：表示对象已经被垃圾收集器访问过，且这个对象的所有引用都已经扫描过。黑色的对象代表已经扫描过，它是安全存活的，如果有其他对象引用指向了黑色对象，无须重新扫描一遍。黑色对象不可能直接（不经过灰色对象）指向某个白色对象。
++ 黑色：表示对象已经被垃圾收集器访问过，且这个对象的所有引用（**属性的引用，指向一个堆中的对象**）都已经扫描过。黑色的对象代表已经扫描过，它是安全存活的。**黑色对象不可能直接（不经过灰色对象）指向某个白色对象。**
 
 + 灰色：表示对象已经被垃圾收集器访问过，但这个对象上至少存在一个引用还没有被扫描过
 
-当且仅当以下两个条件同时满足时，会产生“对象消失”的问题，即原本应该是黑色的对象被误标为白色：
-
-赋值器插入了一条或多条从黑色对象到白色对象的新引用；
-
-赋值器删除了全部从灰色对象到该白色对象的直接或间接引用。
+> **当且仅当以下两个条件同时满足时，会产生“对象消失”的问题（即原本应该是黑色的对象被误标为白色）：**
+>
+> 1. 赋值器插入了一条或多条从黑色对象到白色对象的新引用；
+>
+> 2. 赋值器删除了全部从灰色对象到该白色对象的直接或间接引用。
+>
+> 黑色
+>
+> :arrow_down:
+>
+> 灰色
+>
+> :arrow_down: 		（2. 删除从灰色到白色的直接或间接引用:negative_squared_cross_mark:）
+>
+> 白色
+>
+> 1. 是指黑色直接指向了白色引用（黑色 :arrow_right:白色）
+>
+> 2. 是指灰色删除了指向白色（灰色:negative_squared_cross_mark:白色）
 
 
 
@@ -752,7 +774,7 @@ False Sharing
 
 ### 5 经典垃圾收集器
 
-分代收集：
+**分代收集：**
 
 ​	Serial + Serial Old
 
@@ -762,9 +784,11 @@ False Sharing
 
 ​	Parallel Scavenge + Parallel Old
 
-整堆收集：
+**整堆收集：**
 
 ​	G1
+
+​	ZGC
 
 
 
@@ -1095,11 +1119,11 @@ Java虚拟机的指令由一个字节长度的、代表着某种特定操作含�
 
 #### Java内存模型
 
-> 定义JMM来屏蔽各种硬件与OS的内存访问差异，实现各平台上的内存访问一致性。
+> 定义 JMM 来屏蔽各种硬件与 OS 的内存访问差异，实现各平台上的内存访问一致性。
 >
 > 在此之前，C & C++直接使用物理硬件和操作系统的内存模型
 
-Java内存模型规定了所有的变量都存储在主内存（Main Memory）中（此处的主内存与介绍物理硬件时提到的主内存名字一样，两者也可以类比，但物理上它仅是虚拟机内存的一部分）。每条线程还有自己的工作内存（Working Memory，可与前面讲的处理器高速缓存类比），线程的工作内存中保存了被该线程使用的变量的主内存副本，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的数据
+Java内存模型规定了所有的变量都存储在主内存（Main Memory）中（此处的主内存与介绍物理硬件时提到的主内存名字一样，两者也可以类比，但物理上它仅是虚拟机内存的一部分）。每条线程还有自己的工作内存（Working Memory，可与前面讲的处理器高速缓存类比（**线程工作内存是 Java 对寄存器，高速缓存的统一抽象**）），线程的工作内存中保存了被该线程使用的变量的主内存副本，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的数据
 
 ==当线程访问10MB大小的对象时，只可能复制对象的引用，在某个线程中访问的字段==
 
@@ -1111,19 +1135,21 @@ Java线程	<=>	工作内存	<=> Save & Load	<=>	主内存
 
 Java线程	<=>	工作内存
 
-==如果要勉强对应，从变量、主内存、工作内存的定义来看，主内存主要对应于Java堆中的对象实例数据部分，而工作内存则对应于虚拟机栈中的部分区域，而从更基础层次来说，主内存对应物理硬件的主存，工作内存对应寄存器与高速缓存。物理机与虚拟机具有高度可类比性==
+==如果要勉强对应，从变量、主内存、工作内存的定义来看，主内存主要对应于Java堆中的对象实例数据部分，而工作内存则对应于虚拟机栈中的部分区域，而从更基础层次来说，主内存对应物理硬件的主存，**工作内存对应寄存器与高速缓存**。物理机与虚拟机具有高度可类比性==
 
-​							Mark Word：哈希码（计算过一致性hash之后无法偏向），GC标志，GC年龄，同步锁信息
+​							Mark Word 8B：哈希码（计算过一致性hash之后无法偏向），GC标志，GC年龄，同步锁信息
 
-​			对象头	Klass Point
+​			对象头	Klass Point 4B
 
 对象	实例数据
 
 ​			[对齐填充]
 
+​			[数组长度]
 
 
-Java内存模型的操作简化为4种：
+
+**Java内存模型的操作简化为4种：**
 
 + ==read：read load use==
 + ==write: assign store write==
@@ -1174,11 +1200,11 @@ public int getValue() {
 
 ##### volatile
 
-保证可见性，禁止指令重排优化（有序性）
+**保证可见性，禁止指令重排优化（有序性），不保证原子性**
 
 可见性：使用volatile修饰的变量前，必须从主存获取新的值，修改volatile修饰的变量值必须立刻同步回主存
 
-指令重排：对volatile修饰的变量赋值之后，会产生一个额外的操作==lock addl$0x0, (%esp)==，对esp寄存器的值加0，显然是一个空操作，因为IA32规定不允许lock配合nop使用。查询手册可知，这个操作将本处理器缓存的值同步回主存，根据缓存一致性协议会导致其他核无效化其当前值的缓存。当执行lock addl$0x0, (%esp)意味着所有之前的操作都已经执行完成，这样便形成了“指令重排序无法越过内存屏障”的效果。
+指令重排：对volatile修饰的变量赋值之后，会产生一个额外的操作==lock addl$0x0, (%esp)==，对esp「栈顶指针」寄存器的值加0，显然是一个空操作，因为IA32规定不允许lock配合nop使用。查询手册可知，这个操作将本处理器缓存的值同步回主存，根据缓存一致性协议会导致其他核无效化其当前值的缓存。当执行lock addl$0x0, (%esp)意味着所有之前的操作都已经执行完成，这样便形成了“指令重排序无法越过内存屏障”的效果。
 
 使用场景：==结果不依赖变量当前值，或者只有单一线程修改变量值==
 
@@ -1198,6 +1224,8 @@ putstatic
 
 
 
+##### JMM 规范要求
+
 + 原子性
 
 基本数据类型的访问读写都具备原子性
@@ -1212,7 +1240,7 @@ volatile变量保证修改立刻同步回主存，普通变量无法保证这一
 
 + 有序性
 
-==“线程内表现为串行语义”，在一个线程观察另一个线程所有操作都是无序的（指令重排，主存与工作内存同步延迟）==
+==“线程内表现为串行语义”，在一个线程观察另一个线程所有操作都是无序的（指令重排，主存与工作内存同步延迟，访存需要上百周期，CPU 可能先执行后面的代码）==
 
 
 
@@ -1284,6 +1312,10 @@ memory barrier
 
 + **用户线程**（1：N）
 
+> goroutine
+>
+> Java 纤程
+
 狭义上的用户线程指的是完全建立在用户空间的线程库上，系统内核不能感知到用户线程的存在及如何实现的。==用户线程的建立、同步、销毁和调度完全在用户态中完成，不需要内核的帮助==。如果程序实现得当，这种线程不需要切换到内核态，因此操作可以是非常快速且低消耗的，也能够支持规模更大的线程数量，部分高性能数据库中的多线程就是由用户线程实现的
 
 + **混合线程实现**（N：M）
@@ -1304,7 +1336,7 @@ JDK1.3起，虚拟机线程模型基于OS原生线程模型实现，即采用1�
 
 + 协同式调度
 
-线程执行时间由本身控制，当线程把工作执行完毕主动通知系统切换到另一个线程
+线程执行时间由用户「库，而不是操作系统」控制，当线程把工作执行完毕主动通知系统切换到另一个线程
 
 优点：实现简单，无同步问题
 
@@ -1316,18 +1348,18 @@ CPU以时间片的轮转的方式调度各线程
 
 Java线程优先级与Windows线程优先级对应关系
 
-| Java线程优先级          | Windows线程优先级        |
-| ----------------------- | ------------------------ |
-| 1[Thread.MIN_PRIORITY]  | THREAD_PRIORITY_LOWEST   |
-| 2                       | LOWEST                   |
-| 3                       | BELOW_NORMAL             |
-| 4                       | BELOW_NORMAL             |
-| 5[Thread.NORM_PRIORITY] | NORMAL                   |
-| 6                       | ABOVE_NORMAL             |
-| 7                       | ABOVE_NORMAL             |
-| 8                       | HIGHEST                  |
-| 9                       | HIGHEST                  |
-| 10(Thread.MAX_PRIORITY) | THREAD_PRIORITY_CRITICAL |
+| Java线程优先级              | Windows线程优先级        |
+| --------------------------- | ------------------------ |
+| **1[Thread.MIN_PRIORITY]**  | THREAD_PRIORITY_LOWEST   |
+| 2                           | LOWEST                   |
+| 3                           | BELOW_NORMAL             |
+| 4                           | BELOW_NORMAL             |
+| **5[Thread.NORM_PRIORITY]** | NORMAL                   |
+| 6                           | ABOVE_NORMAL             |
+| 7                           | ABOVE_NORMAL             |
+| 8                           | HIGHEST                  |
+| 9                           | HIGHEST                  |
+| **10(Thread.MAX_PRIORITY)** | THREAD_PRIORITY_CRITICAL |
 
 
 
@@ -1349,12 +1381,12 @@ Java线程优先级与Windows线程优先级对应关系
 
 用户线程能省掉上下文保护的开销吗，答案是不能，但我们可以打开脑洞自己解决这一问题
 
-+ 有栈协程：完整的做调用栈的保存，恢复
-+ 无栈协程：==有限状态机，状态保存在闭包==
++ 有栈协程：完整的做调用栈的保存，恢复（goroutine 有栈）
++ 无栈协程：==有限状态机，状态保存在闭包（感觉什么都需要用户自己开发）==
 
 ==64位Linux上HotSpot线程栈容量默认实1MB，此外内核数据结构额外消耗16KB，而一个协程的栈通常几百B到几KB之间==
 
-Java有栈协程的实现：纤程
+**Java有栈协程的实现：纤程**
 
 
 
@@ -1440,7 +1472,7 @@ JDK6以后synchronized与ReentrantLock性能基本持平
 
 
 
-##### **非阻塞同步
+##### 非阻塞同步
 
 ==随着硬件指令集发展，我们有基于冲突检测的乐观并发策略，这种策略不挂起线程，称为非阻塞同步，无锁编程==
 
@@ -1468,7 +1500,7 @@ CAS操作的“ABA问题”。J.U.C包为了解决这个问题，提供了一个
 
 ##### 无同步方案
 
-+ 可重入代码（纯代码Scala）
++ 可重入代码（纯代码，Scala）
 
 不依赖全局变量，堆中数据，公用系统资源，用到的状态量都由参数传入，不调用非可重入方法；
 
@@ -1476,7 +1508,7 @@ CAS操作的“ABA问题”。J.U.C包为了解决这个问题，提供了一个
 
 + 线程本地存储
 
-ThreadLocal
+**ThreadLocal**
 
 经典web交互模型，一个请求对应一个服务器线程（Thread per Request）
 
