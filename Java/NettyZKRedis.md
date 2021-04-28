@@ -10,7 +10,7 @@
 
 #### 10 ZK分布式协调
 
-ZooKeeper是Hadoop的正式子项目，它是一个针对大型分布式系统的可靠协调系统，**==提供的功能包括：配置维护、名字服务、分布式同步、组服务等。==**
+ZooKeeper是Hadoop的正式子项目，它是一个针对大型分布式系统的可靠协调系统，**==提供的功能包括：配置维护、命名服务、分布式同步、组服务等。==**
 
 
 
@@ -172,16 +172,16 @@ CRUD（Create、Retrieve、Update、Delete）
 
 
 
-##### 10.4 *ZK实践
+##### 10.4 ZK实践
 
 
 
 ###### ZK分布式命名服务
 
-dubbo大致思路：
+**dubbo大致思路：**
 
-+ 服务提供者启动时，在ZK注册节点`/dubbo/${serviceName}/providers`写入自己的API地址
-+ 服务消费者启动时，订阅对应节点下URL地址，获得服务提供者提供的API
++ **服务提供者启动时，在ZK注册节点`/dubbo/${serviceName}/providers`写入自己的API地址**
++ **服务消费者启动时，订阅对应节点下URL地址，获得服务提供者提供的API**
 
 ``` java
 // 按以上思路实现
@@ -494,9 +494,9 @@ class InterProcessMutexTest {
 
 ###### 总结
 
-（1）优点：ZooKeeper分布式锁（如InterProcessMutex），能有效地解决分布式问题，不可重入问题，使用起来也较为简单。
+（1）优点：ZooKeeper分布式锁（如InterProcessMutex），能有效地解决分布式问题，使用起来也较为简单。
 
-（2）缺点：ZooKeeper实现的分布式锁，性能并不太高。为什么呢？因为每次在创建锁和释放锁的过程中，都要动态创建、销毁暂时节点来实现锁功能。大家知道，Zk中创建和删除节点只能通过Leader（主）服务器来执行，然后Leader服务器还需要将数据同步到所有的Follower（从）服务器上，这样频繁的网络通信，性能的短板是非常突出的。
+（2）缺点：ZooKeeper实现的分布式锁，性能并不太高。为什么呢？因为每次在创建锁和释放锁的过程中，都要动态创建、销毁暂时节点来实现锁功能。大家知道，**Zk中创建和删除节点只能通过Leader（主）服务器来执行，然后Leader服务器还需要将数据同步到所有的Follower（从）服务器上，这样频繁的网络通信，性能的短板是非常突出的。**
 
 
 
@@ -890,7 +890,7 @@ Spring Expression Language
 
 
 
-**==SpEL提供了一个变量定义的上下文接口——EvaluationContext，并且提供了标准的上下文实现——StandardEvaluationContext。通过EvaluationContext接口的setVariable(variableName, value)方法，可以定义“上下文变量”，这些变量在表达式中采用“#variableName”的方式予以引用。在创建变量上下文Context实例时，还可以在构造器参数中设置一个rootObject作为根，可以使用“#root”引用根对象，也可以使用“#this”引用根对象。==**
+**SpEL提供了一个变量定义的上下文接口——EvaluationContext，并且提供了标准的上下文实现——StandardEvaluationContext。通过EvaluationContext接口的setVariable(variableName, value)方法，可以定义“上下文变量”，这些变量在表达式中采用“#variableName”的方式予以引用。在创建变量上下文Context实例时，还可以在构造器参数中设置一个rootObject作为根，可以使用“#root”引用根对象，也可以使用“#this”引用根对象。**
 
 ``` java
 main(String[] args) {

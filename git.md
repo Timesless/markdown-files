@@ -1,3 +1,158 @@
+## 2021.4 Git
+
+
+
+### 常用命令
+
+``` shell
+
+# 用户名
+git config --global user.name yangzl
+# 虚拟邮箱
+git config --global user.email yangzl@git.com
+
+# 初始化本地库
+git init
+
+# 从工作区 添加文件到 暂存区
+git add ./*
+# 从 暂存区 删除文件
+git rm --cached hello.txt
+
+# 查看 git 状态
+git status
+
+# 从暂存区 提交到 本地库
+git commit -m "提交信息"
+
+# 查看 log
+git log
+git reflog
+
+######################### 版本控制
+git reset --hard <commitId>
+
+```
+
+
+
+### 分支管理
+
+``` shell
+
+# 查看分支
+git branch -v
+
+# 创建分支
+git branch hotfix
+
+# 创建并切换到 branchName 分支
+git checkout <branchName>
+
+# 分支合并「把 branchName 合并到当前分支」
+git merge <branchName>
+```
+
+
+
+#### 冲突合并
+
+``` shell
+########################
+git checkout hot-fix
+
+vim hello.txt
+
+git commit -m "hot-fix edit" hello.txt
+
+#########################
+git checkout master
+
+vim hello.txt
+
+git commit -m "master edit" hello.txt
+
+##############################
+# 在 master 合并 hot-fix
+
+git merge hot-fix
+
+git status
+
+#### both modified:	hello.txt ####
+#### 此时需要手动合并代码
+
+vim hello.txt
+
+# 此时提交不能携带文件名
+git commit -m “conflict commit”
+```
+
+
+
+### 团队协作
+
+``` shell
+git remote -v
+
+# 推送操作「最小单位是分支」
+git push origin master / dev
+
+# 拉取操作
+git pull origin master / dev
+```
+
+
+
+#### 团队内协作
+
+``` shell
+# 从本地库 推送到 远程库「推送之前需要先配置远程库」
+
+# 岳不群
+git remote add origin git@github.com:YBQ/hsjh.git
+git commit -m "msg"
+git push origin master / dev
+
+# 令狐冲提交后，岳不群 pull
+git pull origin master
+
+
+#令狐冲
+git clone git@github.com:YBQ/hsjh.git
+git commit -m ""
+git push orign master
+```
+
+
+
+#### 跨团队协作
+
+提交 PR「Pull Request」进行代码合并
+
+``` shell
+# 东方不败 fork 岳不群华山剑法
+# 远程仓库 fork
+fork
+
+# 克隆到本地库
+git clone git@github.com:DFBB/hsjh.git
+
+git commit -m "东方不败修改版华山剑法"
+
+git push origin master
+
+# 东方不败 发起 Pull Request
+# 岳不群 审核
+# 岳不群 merge
+# 岳不群 pull
+
+```
+
+
+
+
+
 ## 1 版本号控制
 
 <kbd>工作区</kbd> -git add--> <kbd>暂存区</kbd> -git commit--> <kbd>本地库</kbd> 

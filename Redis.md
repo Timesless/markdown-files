@@ -1053,6 +1053,7 @@ redisClient结构和clusterLink结构都有自己的套接字描述符和输入�
 ❑如果键所在的槽正好就指派给了当前节点，那么节点直接执行这个命令
 
 ❑如果键所在的槽并没有指派给当前节点，那么节点会向客户端返回一个MOVED错误，指引客户端转向（redirect）至正确的节点，并再次发送之前想要执行的命令。
+
 **其中CRC16（key）语句用于计算键key的CRC-16校验和，而 &16383语句则用于计算出一个介于0至16383之间的整数作为键key的槽号**
 节点和单机服务器在数据库方面的一个区别是，**==集群节点只能使用0号数据库==**，而单机Redis服务器则没有这一限制。
 
@@ -1363,7 +1364,7 @@ BITCOUNT bloomfilter
 Redis的慢查询日志功能用于记录执行时间超过给定时长的命令请求，用户可以通过这个功能产生的日志来监视和优化查询速度。
 
 ``` shell
-redis＞ CONFIG SET slowlog-log-slower-than
+redis＞ CONFIG SET slowlog-log-slower-than <number>
 OK￼
 redis＞ CONFIG SET slowlog-max-len
 OK

@@ -1,4 +1,88 @@
-### 1. 事务并发控制
+
+
+## 基本使用
+
+``` mysql
+// session 层面关闭bin_log
+set session sql_log_bin = 0;
+
+// global
+set global sql_log_bin = 0;
+
+// persist，配置修改将持久化到文件
+set persist sql_log_bin = 0;
+```
+
+
+
+### 执行顺序
+
+1. FROM
+2. JOIN
+3. ON
+4. WHERE
+5. GROUP BY
+6. HAVING
+7. SELECT
+8. DISTINCT
+9. ORDER BY
+10. LIMIT
+
+> **这么看来，笛卡尔积会优先于连表条件 ON 产生「？」**
+
+
+
+### 常用 DDL
+
+``` shell
+
+# 这样修改字符编码会将所有字段都修改为 utf8mb4
+alter table t convert character set utf8mb4;
+
+# 只会修改表的编码，而字段是旧的编码
+alter table t set charset = utf8mb4
+```
+
+
+
+### 常用函数
+
+``` shell
+
+select md5('a');
+
+hex('a');
+
+# -2
+floor(-1.5)
+
+# (0 -100]
+rand() * 100
+
+lpad(column, 8, '-')
+rpad(column, 8, '-')
+repeat('a', 3)
+repeat('a', floor(1 + rand() * 19))
+
+# length() 计算字节长度
+length(column)
+
+# 计算字符长度
+char_length(column)
+
+now()
+# 带 3 位毫秒数
+now(3)
+sysdate()
+CURRENT_TIMESTAMP
+
+```
+
+
+
+
+
+### 1 事务并发控制
 
 事务并发控制保证隔离性
 
@@ -10,7 +94,7 @@
 
 
 
-#### 1. 2 2PL
+#### 1.2 2PL
 
 悲观并发控制唯一实现2PL（Two-phase Locking二阶段锁）
 
@@ -28,8 +112,9 @@
 
 三种实现：
 
-+ Basic T/O
-+ OCC（Optimistic Concurrency Control）
+##### Basic T/O
+
+##### OCC（Optimistic Concurrency Control）
 
 > OCC分3阶段
 >
@@ -37,7 +122,7 @@
 > + Validation Phase，重扫Read Set，Write Set，检验数据是否满足Isolation Level，如果满足Commit否则Abort
 > + Write Phase，或者叫做Commit Phase，把临时区数据更新到数据库中，完成事务提交
 
-+ MVCC
+##### MVCC
 
 >  **Multi-Version可看作另一个维度， 可以应用在任意算法上，形成MV-TO, MV-2PL, MV-OCC**
 >
@@ -77,7 +162,20 @@ Intention Lock
 
 
 
-#### 1.5 InnoDB MVCC
+###  1.5 InnoDB MVCC
+
+实现原理：
+
++ 隐式字段
++ undo_log
++ Read View（读视图，Snapshot）
+
+> MVCC「多版本并发控制协议」，在每行数据添加额外两列隐式字段，配合 undo_log 实现
+>
+> **主要提高读写并发，实现快照读与写不加锁**
+>
+> + txid（6B）
+> + roll_ptr（7B，与数据库实际记录形成链表，根据 txid 判断当前记录对当前事务是否可读）
 
 Snapshot Read & Current Read（快照读 & 当前读）
 
@@ -102,23 +200,21 @@ DELETE FROM table WHERE ?
 
 
 
+### 2 log
+
+> MySQL 各种 log
+>
+> + error_log（错误日志）
+> + general_log（server 所有 sql 操作）
+> + slow_query_log（慢查询日志）
+> + bin_log（主从复制）
+> + redo_log
+> + undo_log（配合隐式字段（txid，roll_ptr）实现 MVCC）
+
 
 
 ## 高性能MySQL
 
 
 
-
-
-
-
-
-
-## 常用记录
-
-``` mysql
-
-// session 层面关闭bin_log
-set sql_log_bin = 0;
-```
 
